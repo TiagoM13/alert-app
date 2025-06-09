@@ -1,6 +1,7 @@
 import { Header } from "@/components";
+import { NotificationItem } from "@/components/notifications/notification";
 import React from "react";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, StyleSheet, View } from "react-native";
 
 export default function CreateAlertScreen() {
   const handleBellPress = () => {
@@ -20,8 +21,16 @@ export default function CreateAlertScreen() {
         onBellPress={handleBellPress}
         onUserAvatarPress={handleUserAvatarPress}
       />
+
       <View style={styles.content}>
-        <Text>Conteúdo principal da tela</Text>
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
+        <NotificationItem />
       </View>
     </SafeAreaView>
   );
@@ -34,7 +43,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    marginTop: 20,
+    padding: 16,
+    gap: 20,
   },
 });
