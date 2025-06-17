@@ -1,5 +1,5 @@
 import { Header } from "@/components";
-import { NotificationItem } from "@/components/notifications/notification";
+import { AlertList } from "@/components/alerts/alert-list";
 import React from "react";
 import { SafeAreaView, StyleSheet, View } from "react-native";
 
@@ -23,14 +23,7 @@ export default function CreateAlertScreen() {
       />
 
       <View style={styles.content}>
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
-        <NotificationItem />
+        <AlertList />
       </View>
     </SafeAreaView>
   );
@@ -43,9 +36,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: "center",
-    marginTop: 20,
-    padding: 16,
+    paddingHorizontal: 16,
     gap: 20,
   },
 });

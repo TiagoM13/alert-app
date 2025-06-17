@@ -1,10 +1,15 @@
 import { Theme } from "@/constants";
-import styled from "styled-components/native";
+import { styled } from "styled-components/native";
 
-export const NotificationContainer = styled.View`
+interface NotificationStyleProps {
+  borderColor?: string;
+  textColor: string;
+}
+
+export const NotificationContainer = styled.View<NotificationStyleProps>`
   padding: 16px;
   border-left-width: 4px;
-  border-left-color: ${Theme.colors.alert};
+  border-left-color: ${(props) => props.borderColor};
   border-top-left-radius: 16px;
   border-bottom-left-radius: 20px;
   justify-content: center;
@@ -17,10 +22,10 @@ export const NotificationHeader = styled.View`
   align-items: center;
 `;
 
-export const NotificationType = styled.Text`
+export const NotificationType = styled.Text<NotificationStyleProps>`
   font-size: 14px;
   font-weight: 600;
-  color: ${Theme.colors.alert};
+  color: ${(props) => props.textColor};
 `;
 
 export const NotificationTitle = styled.Text`
