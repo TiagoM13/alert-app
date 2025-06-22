@@ -14,7 +14,7 @@ export const HeaderView = styled.View`
 export const HeaderTitle = styled.Text`
   font-size: ${Theme.font.headerTitle}px;
   font-weight: 600;
-  color: ${Theme.colors.textPrimary};
+  color: ${Theme.colors.black};
 `;
 
 export const IconView = styled.View`

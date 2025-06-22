@@ -1,8 +1,8 @@
 import { Theme } from "@/constants";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { TouchableOpacity } from "react-native";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   HeaderTitle,
   HeaderView,
@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderComponentProps> = ({
           style={{ padding: 5 }}
         >
           <Ionicons
-            name="notifications-outline"
+            name="notifications"
             size={Theme.font.iconSize}
             color={Theme.colors.iconColor}
           />

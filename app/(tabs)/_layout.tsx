@@ -1,4 +1,6 @@
+import { Theme } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
@@ -8,10 +10,17 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: Theme.colors.primary,
+        tabBarLabelStyle: {
+          fontSize: 14,
+          fontWeight: "600",
+        },
         tabBarStyle: Platform.select({
           ios: {
             // Use a transparent background on iOS to show the blur effect
             position: "absolute",
+            paddingTop: 10,
+            backgroundColor: "#fff",
           },
           default: {},
         }),
@@ -22,16 +31,25 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="home-sharp" size={20} color={color} />
+            <MaterialIcons name="home" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "History",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="time" size={22} color={color} />
           ),
         }}
       />
       {/* <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: "Settings",
+          title: "Profile",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings" size={20} color={color} />
+            <Ionicons name="person" size={24} color={color} />
           ),
         }}
       /> */}

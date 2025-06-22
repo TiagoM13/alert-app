@@ -10,8 +10,16 @@ export const NotificationContainer = styled.View<NotificationStyleProps>`
   padding: 16px;
   border-left-width: 4px;
   border-left-color: ${(props) => props.borderColor};
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 20px;
+
+  border-bottom-width: 1px;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+
+  border-right-width: 1px;
+  border-right-color: rgba(0, 0, 0, 0.08);
+
+  border-top-width: 0px;
+
+  border-radius: 20px;
   justify-content: center;
   gap: 5px;
 `;

@@ -2,9 +2,11 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "react-native";
 import "react-native-reanimated";
 
 export default function RootLayout() {
+  const theme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -20,7 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar translucent style={theme === "dark" ? "light" : "dark"} />
     </ThemeProvider>
   );
 }
