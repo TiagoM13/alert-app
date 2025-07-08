@@ -1,9 +1,8 @@
 import React from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { AlertItem } from "./alert-item";
 import { Alert } from "./types";
 
-// Dados de exemplo para as notificações
 export const alerts: Alert[] = [
   {
     id: "1",
@@ -77,25 +76,18 @@ export function AlertList() {
   );
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       <FlatList
         data={alerts}
         renderItem={renderNotificationItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{
+          gap: 16,
+          paddingVertical: 10,
+          paddingBottom: 80,
+        }}
         showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    gap: 16,
-    paddingVertical: 10,
-    paddingBottom: 80,
-  },
-});

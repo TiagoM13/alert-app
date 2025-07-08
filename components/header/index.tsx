@@ -2,13 +2,7 @@ import { Theme } from "@/constants";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import { TouchableOpacity } from "react-native";
-import {
-  HeaderTitle,
-  HeaderView,
-  IconView,
-  UserAvatarButton,
-} from "./header.styles";
+import { Text, TouchableOpacity, View } from "react-native";
 
 interface HeaderComponentProps {
   title?: string;
@@ -22,14 +16,14 @@ export const Header: React.FC<HeaderComponentProps> = ({
   onUserAvatarPress,
 }) => {
   return (
-    <HeaderView>
-      <HeaderTitle>{title}</HeaderTitle>
+    <View className="flex-row justify-between items-center px-5 py-[15px] border border-cardBackground bg-transparent">
+      <Text className="text-black text-[24px] font-semibold">{title}</Text>
 
-      <IconView>
+      <View className="flex flex-row items-center gap-4">
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onBellPress}
-          style={{ padding: 5 }}
+          className="p-1"
         >
           <Ionicons
             name="notifications"
@@ -38,14 +32,18 @@ export const Header: React.FC<HeaderComponentProps> = ({
           />
         </TouchableOpacity>
 
-        <UserAvatarButton activeOpacity={0.7} onPress={onUserAvatarPress}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onUserAvatarPress}
+          className="w-10 h-10 rounded-full bg-cardBackground items-center justify-center overflow-hidden"
+        >
           <FontAwesome
             name="user"
             size={Theme.font.userIconSize}
             color={Theme.colors.iconColor}
           />
-        </UserAvatarButton>
-      </IconView>
-    </HeaderView>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };

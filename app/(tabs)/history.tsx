@@ -15,12 +15,7 @@ export default function History() {
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#f8f8f8",
-      }}
-    >
+    <SafeAreaView className="flex-1 bg-white">
       <Header
         title="History"
         onBellPress={handleBellPress}

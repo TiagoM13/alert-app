@@ -2,18 +2,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { formatDistanceToNow } from "date-fns";
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { Theme } from "@/constants";
-import {
-  FooterText,
-  NotificationContainer,
-  NotificationDescription,
-  NotificationFooter,
-  NotificationHeader,
-  NotificationTitle,
-  NotificationType,
-} from "./alert.styles";
 import { Alert } from "./types";
 
 interface NotificationItemProps {
@@ -40,9 +31,20 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
   const color = getColorByType(alert.type);
 
   return (
-    <NotificationContainer borderColor={color} textColor={color}>
-      <NotificationHeader>
-        <NotificationType textColor={color}>{alert.type}</NotificationType>
+    <View
+      className="p-4 rounded-2xl justify-center gap-1.5 border-r border-b"
+      style={{
+        borderLeftWidth: 4,
+        borderLeftColor: color,
+        borderRightColor: "rgba(0,0,0,0.08)",
+        borderBottomColor: "rgba(0,0,0,0.08)",
+      }}
+    >
+      {/* Header */}
+      <View className="flex-row justify-between items-center">
+        <Text className="text-sm font-semibold" style={{ color }}>
+          {alert.type}
+        </Text>
         <TouchableOpacity activeOpacity={0.7}>
           <SimpleLineIcons
             name="arrow-right"
@@ -50,25 +52,31 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
             color={Theme.colors.textLabel}
           />
         </TouchableOpacity>
-      </NotificationHeader>
+      </View>
 
-      <NotificationTitle>{alert.title}</NotificationTitle>
-      <NotificationDescription>{alert.message}</NotificationDescription>
+      {/* Title */}
+      <Text className="text-base font-bold">{alert.title}</Text>
 
-      <NotificationFooter>
+      {/* Message */}
+      <Text className="text-sm font-normal text-textDescription">
+        {alert.message}
+      </Text>
+
+      {/* Footer */}
+      <View className="flex-row items-center gap-1.5 mt-1">
         <MaterialIcons
           name="location-on"
           size={16}
           color={Theme.colors.textLabel}
         />
-        <FooterText>Downtown District</FooterText>
+        <Text className="text-xs text-textLabel">Downtown District</Text>
         <SimpleLineIcons
           name="clock"
           size={12}
           color={Theme.colors.textLabel}
         />
-        <FooterText>{timeAgo}</FooterText>
-      </NotificationFooter>
-    </NotificationContainer>
+        <Text className="text-xs text-textLabel">{timeAgo}</Text>
+      </View>
+    </View>
   );
 };
