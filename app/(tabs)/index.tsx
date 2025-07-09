@@ -26,7 +26,7 @@ export default function Home() {
         onUserAvatarPress={handleUserAvatarPress}
       />
 
-      <View className="flex-1 relative px-4 gap-5">
+      <View className="flex-1 relative px-6 gap-5">
         <AlertList />
         <FloatingButton onPress={handleAddAlert} />
       </View>
