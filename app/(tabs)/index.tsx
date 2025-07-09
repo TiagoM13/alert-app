@@ -8,19 +8,14 @@ import { SafeAreaView, View } from "react-native";
 export default function Home() {
   const handleBellPress = () => {
     console.log("Sino pressionado!");
-    // Navegar para a tela de notificações, etc.
   };
 
   const handleUserAvatarPress = () => {
-    console.log("Avatar do usuário pressionado!");
-    // Navegar para o perfil do usuário, etc.
     router.push("/profile");
   };
 
   const handleAddAlert = () => {
-    // abrir modal, navegar para tela de criação, etc.
     router.push("/register");
-    console.log("Adicionar novo alerta");
   };
 
   return (
