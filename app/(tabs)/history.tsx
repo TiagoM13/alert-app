@@ -1,8 +1,8 @@
 import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
-import { FloatingButton } from "@/components/floating-button";
+import { alerts } from "@/database/alerts";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -36,7 +36,15 @@ const tabs = [
 ];
 
 export default function History() {
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = React.useState<Tabs>(Tabs.All);
+
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter((alert) => {
+      if (selectedTab === Tabs.All) return true;
+      return alert.type === selectedTab;
+    });
+  }, [selectedTab]);
 
   const handleTabPress = (tab: Tabs) => {
     setSelectedTab(tab);
@@ -54,6 +62,12 @@ export default function History() {
     router.push("/register");
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
@@ -63,39 +77,40 @@ export default function History() {
       />
 
       <View className="flex-1 relative px-6 gap-2">
-        <View className="py-2">
-          <ScrollView
-            showsHorizontalScrollIndicator={false}
-            horizontal
-            contentContainerStyle={{
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            {tabs.map((tab) => (
-              <AnimatedPressable
-                key={tab.value}
-                onPress={() => handleTabPress(tab.value)}
-                entering={FadeIn.duration(500)}
-                exiting={FadeOut.duration(500)}
-                className={`px-4 py-2 rounded-3xl justify-center items-center transition-all duration-500 ease-in-out ${
-                  selectedTab === tab.value ? "bg-primary" : "bg-gray-100"
-                }`}
-              >
-                <Text
-                  className={`text-base font-medium ${
-                    selectedTab === tab.value ? "text-white" : "text-gray-800"
+        {!isLoading && (
+          <View className="py-2">
+            <ScrollView
+              showsHorizontalScrollIndicator={false}
+              horizontal
+              contentContainerStyle={{
+                alignItems: "center",
+                gap: 14,
+              }}
+            >
+              {tabs.map((tab) => (
+                <AnimatedPressable
+                  key={tab.value}
+                  onPress={() => handleTabPress(tab.value)}
+                  entering={FadeIn.duration(500)}
+                  exiting={FadeOut.duration(500)}
+                  className={`px-4 py-2 rounded-3xl justify-center items-center transition-all duration-500 ease-in-out ${
+                    selectedTab === tab.value ? "bg-primary" : "bg-gray-100"
                   }`}
                 >
-                  {tab.label}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </ScrollView>
-        </View>
+                  <Text
+                    className={`text-base font-medium ${
+                      selectedTab === tab.value ? "text-white" : "text-gray-800"
+                    }`}
+                  >
+                    {tab.label}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-        <AlertList />
-        <FloatingButton onPress={handleAddAlert} />
+        <AlertList alerts={filteredAlerts} isLoading={isLoading} />
       </View>
     </SafeAreaView>
   );

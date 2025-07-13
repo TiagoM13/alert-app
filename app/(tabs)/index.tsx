@@ -1,11 +1,13 @@
 import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
-import { FloatingButton } from "@/components/floating-button";
+import { alerts } from "@/database/alerts";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView, View } from "react-native";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
+
   const handleBellPress = () => {
     console.log("Sino pressionado!");
   };
@@ -18,6 +20,12 @@ export default function Home() {
     router.push("/register");
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
@@ -27,8 +35,7 @@ export default function Home() {
       />
 
       <View className="flex-1 relative px-6 gap-5">
-        <AlertList />
-        <FloatingButton onPress={handleAddAlert} />
+        <AlertList alerts={alerts} isLoading={isLoading} />
       </View>
     </SafeAreaView>
   );

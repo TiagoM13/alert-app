@@ -1,9 +1,9 @@
 import { Theme } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, Pressable } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -17,7 +17,6 @@ export default function TabLayout() {
         },
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
             position: "absolute",
             paddingTop: 10,
             backgroundColor: "#fff",
@@ -35,6 +34,31 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="register"
+        options={{
+          title: "",
+          tabBarIcon: () => null,
+          tabBarButton: () => (
+            <Pressable
+              onPress={() => router.push("/register")}
+              className="absolute -top-5 w-16 h-16 bg-primary rounded-full justify-center items-center shadow-md"
+              style={{
+                alignSelf: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 2,
+                elevation: 2,
+              }}
+            >
+              <Ionicons name="add" size={32} color={Theme.colors.white} />
+            </Pressable>
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="history"
         options={{
@@ -44,15 +68,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person" size={24} color={color} />
-          ),
-        }}
-      /> */}
     </Tabs>
   );
 }
