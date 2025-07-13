@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router, Tabs } from "expo-router";
 import React from "react";
-import { Platform, Pressable } from "react-native";
+import { Pressable } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -15,14 +15,23 @@ export default function TabLayout() {
           fontSize: 14,
           fontWeight: "600",
         },
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-            paddingTop: 10,
-            backgroundColor: "#fff",
-          },
-          default: {},
-        }),
+        tabBarIconStyle: {
+          marginBottom: 8,
+        },
+        tabBarStyle: {
+          position: "absolute",
+          backgroundColor: Theme.colors.white,
+          height: 85,
+          paddingTop: 5,
+          paddingBottom: 20,
+          borderTopWidth: 1,
+          borderTopColor: Theme.colors.cardBackground,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOpacity: 0.06,
+          shadowOffset: { width: 0, height: -2 },
+          shadowRadius: 4,
+        },
       }}
     >
       <Tabs.Screen
@@ -30,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <MaterialIcons name="home" size={28} color={color} />
+            <MaterialIcons name="home" size={32} color={color} />
           ),
         }}
       />
@@ -43,7 +52,7 @@ export default function TabLayout() {
           tabBarButton: () => (
             <Pressable
               onPress={() => router.push("/register")}
-              className="absolute -top-5 w-16 h-16 bg-primary rounded-full justify-center items-center shadow-md"
+              className="absolute -top-6 w-[70px] h-[70px] bg-primary rounded-full justify-center items-center shadow-md"
               style={{
                 alignSelf: "center",
                 shadowColor: "#000",
@@ -53,7 +62,7 @@ export default function TabLayout() {
                 elevation: 2,
               }}
             >
-              <Ionicons name="add" size={32} color={Theme.colors.white} />
+              <Ionicons name="add" size={40} color={Theme.colors.white} />
             </Pressable>
           ),
         }}
@@ -64,7 +73,7 @@ export default function TabLayout() {
         options={{
           title: "History",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="time" size={22} color={color} />
+            <Ionicons name="time" size={32} color={color} />
           ),
         }}
       />

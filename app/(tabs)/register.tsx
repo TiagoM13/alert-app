@@ -59,12 +59,14 @@ export default function Profile() {
       />
 
       <View className="flex-1 px-6">
-        <View className="flex-row justify-between items-center">
+        <View className="flex-row justify-between items-center mt-4">
           <TouchableOpacity activeOpacity={0.7} onPress={handleBack}>
             <Octicons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
 
-          <Text className="text-2xl text-center">Add Alert</Text>
+          <Text className="text-black text-[24px] font-semibold">
+            Add Alert
+          </Text>
           <Text className="text-2xl text-center"></Text>
         </View>
 
