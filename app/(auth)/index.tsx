@@ -1,5 +1,7 @@
 import { InputText } from "@/components/_ui/InputText";
+import { Theme } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 
@@ -10,17 +12,42 @@ export default function Login() {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 px-6 mt-16">
         <View className="flex-1">
-          <Text className="text-black text-5xl font-bold text-center">
-            AlertApp
-          </Text>
+          <View className="items-center justify-center mb-4">
+            <View className="bg-primary rounded-full w-32 h-32 justify-center items-center mb-4 p-4">
+              <MaterialIcons name="notifications" size={36} color="white" />
+            </View>
+            <Text className="text-black text-3xl font-bold">AlertApp</Text>
+          </View>
 
-          <Text className="text-black text-center text-xl mt-2">
+          <Text className="text-black font-semibold text-center text-xl mt-2">
             Stay informed with real-time alerts
           </Text>
 
           <View className="flex-1 mt-6">
-            <InputText label="Email Address" placeholder="Enter your email" />
-            <InputText label="Password" placeholder="Enter your password" />
+            <InputText
+              leftIcon={
+                <MaterialIcons
+                  name="email"
+                  size={24}
+                  color={Theme.colors.textLabel}
+                />
+              }
+              label="Email Address"
+              placeholder="Enter your email"
+            />
+            <InputText
+              leftIcon={
+                <MaterialIcons
+                  name="lock"
+                  size={24}
+                  color={Theme.colors.textLabel}
+                />
+              }
+              label="Password"
+              secureTextEntry
+              placeholder="Enter your password"
+              onLeftIconPress={() => {}}
+            />
 
             <TouchableOpacity
               activeOpacity={0.7}
@@ -33,13 +60,13 @@ export default function Login() {
 
             <View className="flex-row items-center justify-center mt-4">
               <TouchableOpacity activeOpacity={0.7}>
-                <Text className="text-primary text-lg">Forgot password?</Text>
+                <Text className="text-primary text-xl">Forgot password?</Text>
               </TouchableOpacity>
             </View>
 
             <View className="flex-row items-center justify-center mt-4 mb-4 pb-4">
               <View className="w-32 h-0.5 bg-cardBackground" />
-              <Text className="text-black text-lg text-center mx-4">
+              <Text className="text-black text-xl text-center mx-4">
                 Or continue with
               </Text>
               <View className="w-32 h-0.5 bg-cardBackground" />
@@ -53,7 +80,7 @@ export default function Login() {
                 >
                   <View className="flex-row items-center justify-center gap-2 bg-white py-3 border border-cardBackground rounded-lg p-2 w-52">
                     <Ionicons name="logo-google" size={24} color="red" />{" "}
-                    <Text className="text-black">Google</Text>
+                    <Text className="text-black text-xl">Google</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -65,7 +92,7 @@ export default function Login() {
                 >
                   <View className="flex-row items-center justify-center gap-2 bg-white border py-3 border-cardBackground rounded-lg p-2 w-52">
                     <Ionicons name="logo-apple" size={24} color="black" />
-                    <Text className="text-black">Apple</Text>
+                    <Text className="text-black text-xl">Apple</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -73,7 +100,7 @@ export default function Login() {
           </View>
 
           <View className="flex-row items-center justify-center mt-4">
-            <Text className="text-black text-lg">
+            <Text className="text-black text-xl">
               Don&apos;t have an account?
             </Text>
 
@@ -81,7 +108,7 @@ export default function Login() {
               activeOpacity={0.7}
               onPress={() => router.push("/create-login")}
             >
-              <Text className="text-primary text-lg"> Sign up</Text>
+              <Text className="text-primary font-bold text-lg"> Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>
