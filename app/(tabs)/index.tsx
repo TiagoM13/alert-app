@@ -16,10 +16,6 @@ export default function Home() {
     router.push("/profile");
   };
 
-  const handleAddAlert = () => {
-    router.push("/register");
-  };
-
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
