@@ -42,7 +42,7 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
     >
       {/* Header */}
       <View className="flex-row justify-between items-center">
-        <Text className="text-sm font-semibold" style={{ color }}>
+        <Text className="text-lg font-semibold" style={{ color }}>
           {alert.type}
         </Text>
         <TouchableOpacity activeOpacity={0.7}>
@@ -55,10 +55,13 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
       </View>
 
       {/* Title */}
-      <Text className="text-base font-bold">{alert.title}</Text>
+      <Text className="text-xl font-bold">{alert.title}</Text>
 
       {/* Message */}
-      <Text className="text-sm font-normal text-textDescription">
+      <Text
+        className="text-lg font-normal text-textDescription"
+        numberOfLines={1}
+      >
         {alert.message}
       </Text>
 
@@ -69,13 +72,13 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
           size={16}
           color={Theme.colors.textLabel}
         />
-        <Text className="text-xs text-textLabel">Downtown District</Text>
+        <Text className="text-sm text-textLabel">Downtown District</Text>
         <SimpleLineIcons
           name="clock"
           size={12}
           color={Theme.colors.textLabel}
         />
-        <Text className="text-xs text-textLabel">{timeAgo}</Text>
+        <Text className="text-sm text-textLabel">{timeAgo}</Text>
       </View>
     </View>
   );

@@ -161,7 +161,7 @@ export default function Profile() {
                             ? "rgba(59, 130, 246, 1)"
                             : "#000000",
                       }}
-                      className="text-base font-medium"
+                      className="text-lg font-medium"
                     >
                       {level.label}
                     </Text>
@@ -170,13 +170,13 @@ export default function Profile() {
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between gap-2 mt-10">
+            <View className="flex-row items-center justify-between gap-2 mt-10 mb-10">
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleBack}
                 className="flex-1 border-2 border-gray-200 rounded-xl p-4"
               >
-                <Text className="text-center text-base font-semibold">
+                <Text className="text-center text-lg font-semibold">
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -185,7 +185,7 @@ export default function Profile() {
                 onPress={handleCreateAlert}
                 className="flex-1 bg-primary rounded-xl p-4"
               >
-                <Text className="text-center text-base text-white font-semibold">
+                <Text className="text-center text-lg text-white font-semibold">
                   Create Alert
                 </Text>
               </TouchableOpacity>

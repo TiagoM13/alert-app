@@ -8,6 +8,10 @@ import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 export default function Login() {
   const router = useRouter();
 
+  const handleLogin = () => {
+    router.push("/(tabs)");
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 px-6 mt-16">
@@ -52,6 +56,7 @@ export default function Login() {
             <TouchableOpacity
               activeOpacity={0.7}
               className="bg-primary rounded-full p-4 mt-4"
+              onPress={handleLogin}
             >
               <Text className="text-white text-xl text-center font-semibold">
                 Login

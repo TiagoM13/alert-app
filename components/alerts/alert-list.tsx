@@ -1,3 +1,4 @@
+import { Theme } from "@/constants";
 import React from "react";
 import { ActivityIndicator, FlatList, Text, View } from "react-native";
 import { AlertItem } from "./alert-item";
@@ -17,7 +18,7 @@ export function AlertList({ alerts, isLoading }: AlertListProps) {
     <View className="flex-1">
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color={Theme.colors.primary} />
         </View>
       ) : alerts.length === 0 ? (
         <View className="flex-1 items-center justify-center">

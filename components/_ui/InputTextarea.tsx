@@ -27,7 +27,7 @@ export const InputTextarea: React.FC<InputTextareaProps> = ({
     <>
       <TextInput
         className={twMerge(
-          "border-2 rounded-md p-3 bg-white text-base h-32 text-justify placeholder:text-gray-400 transition-all duration-300",
+          "border-2 rounded-xl text-lg p-3 bg-white h-44 text-justify placeholder:text-gray-400 transition-all duration-300",
           error ? "border-alert" : "border-gray-200",
           rest.className
         )}
