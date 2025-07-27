@@ -76,6 +76,29 @@ export const fetchAlerts = async (): Promise<Alert[]> => {
   }
 };
 
+// Função para buscar um alerta por ID
+export const fetchAlertById = async (
+  id: string
+): Promise<Alert | undefined> => {
+  try {
+    const database = await getDb();
+    const row = await database.getFirstAsync<Alert>(
+      `SELECT * FROM alerts WHERE id = ?;`,
+      [id]
+    );
+    if (row) {
+      console.log("Alerta buscado por ID com sucesso:", id);
+      return row;
+    } else {
+      console.log("Alerta não encontrado para o ID:", id);
+      return undefined;
+    }
+  } catch (error) {
+    console.error("Erro ao buscar alerta por ID:", error);
+    throw error;
+  }
+};
+
 // Função para deletar um alerta por ID
 export const deleteAlert = async (id: string) => {
   try {
@@ -95,8 +118,15 @@ export const updateAlert = async (alert: Alert) => {
   try {
     const database = await getDb();
     const result = await database.runAsync(
-      `UPDATE alerts SET title = ?, message = ?, type = ?, updatedAt = ? WHERE id = ?;`,
-      [alert.title, alert.message, alert.type, alert.updatedAt, alert.id]
+      `UPDATE alerts SET title = ?, message = ?, type = ?, updatedAt =, location = ? WHERE id = ?;`,
+      [
+        alert.title,
+        alert.message,
+        alert.type,
+        alert.updatedAt,
+        alert.location || "",
+        alert.id,
+      ]
     );
     console.log(
       "Alerta atualizado com sucesso:",

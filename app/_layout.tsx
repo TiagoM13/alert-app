@@ -3,8 +3,12 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { SQLiteProvider } from "expo-sqlite";
 import "react-native-get-random-values";
 import "react-native-reanimated";
 import "../global.css";
@@ -32,18 +36,25 @@ export default function RootLayout() {
   if (!loaded || loading) return null;
 
   return (
-    <ThemeProvider value={DefaultTheme}>
-      <StatusBar translucent style={theme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          // Rotas protegidas
-          <Stack.Screen name="(tabs)" />
-        ) : (
-          // Telas de autenticação
-          <Stack.Screen name="(auth)" />
-        )}
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
+    <GestureHandlerRootView>
+      <ThemeProvider value={DefaultTheme}>
+        <StatusBar translucent style={theme === "dark" ? "light" : "dark"} />
+
+        <SQLiteProvider databaseName="alerts.db">
+          <SafeAreaProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              {isAuthenticated ? (
+                // Rotas protegidas
+                <Stack.Screen name="(tabs)" />
+              ) : (
+                // Telas de autenticação
+                <Stack.Screen name="(auth)" />
+              )}
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </SafeAreaProvider>
+        </SQLiteProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -41,6 +41,10 @@ export default function Home() {
     router.push("/profile");
   };
 
+  const handleAlertPress = (alertId: string) => {
+    router.push({ pathname: "/register", params: { id: alertId } });
+  };
+
   console.log({ isLoading });
 
   return (
@@ -52,7 +56,11 @@ export default function Home() {
       />
 
       <View className="flex-1 relative px-6 gap-5">
-        <AlertList alerts={currentAlerts} isLoading={isLoading} />
+        <AlertList
+          alerts={currentAlerts}
+          onAlertPress={handleAlertPress}
+          isLoading={isLoading}
+        />
       </View>
     </SafeAreaView>
   );

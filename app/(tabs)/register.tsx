@@ -1,13 +1,20 @@
 import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
-import { AlertType } from "@/components/alerts/types";
+import { Alert, AlertType } from "@/components/alerts/types";
 import { Theme } from "@/constants";
-import { insertAlert } from "@/database/database";
+import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
 import Octicons from "@expo/vector-icons/Octicons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { twMerge } from "tailwind-merge";
 import { v4 as uuidv4 } from "uuid";
@@ -59,18 +66,26 @@ const priorityOptions = [
   },
 ];
 
-const defaultValues = {
-  alertType: "Emergency",
-  title: "",
-  description: "",
-  location: "",
-  priority: "Low",
-};
+// const defaultValues = {
+//   alertType: "Emergency",
+//   title: "",
+//   description: "",
+//   location: "",
+//   priority: "Low",
+// };
 export default function Regiter() {
+  const { id } = useLocalSearchParams();
+  const isEditing = !!id;
+
+  console.log({ id });
+
+  const [loadingAlert, setLoadingAlert] = useState(isEditing);
+
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<AlertFormData>({
     resolver: zodResolver(alertSchema),
@@ -87,31 +102,86 @@ export default function Regiter() {
 
   const onSubmit = async (data: AlertFormData) => {
     try {
-      const newAlert = {
-        id: uuidv4(),
-        title: data.title,
-        message: data.description,
-        type: data.alertType as AlertType,
-        location: data.location,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await insertAlert(newAlert);
-      console.log("Alerta salvo no banco de dados:", newAlert);
-      router.push("/(tabs)");
-      Alert.alert("Alerta criado com sucesso");
-      reset({
-        ...defaultValues,
-        priority: defaultValues.priority as "Low" | "Medium" | "High",
-      });
+      if (isEditing && typeof id === "string") {
+        const updatedAlert: Alert = {
+          id: id,
+          title: data.title,
+          message: data.description,
+          type: data.alertType as AlertType,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          location: data.location || "",
+        };
+        await updateAlert(updatedAlert);
+        console.log("Alerta atualizado no banco de dados:", updatedAlert);
+        router.push("/(tabs)");
+        reset();
+      } else {
+        const newAlert: Alert = {
+          id: uuidv4(),
+          title: data.title,
+          message: data.description,
+          type: data.alertType as AlertType,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          location: data.location || "",
+        };
+        await insertAlert(newAlert);
+        console.log("Alerta salvo no banco de dados:", newAlert);
+        reset();
+        router.push("/(tabs)");
+      }
     } catch (error) {
-      console.error("Erro ao salvar alerta:", error);
+      console.error("Erro ao salvar/atualizar alerta:", error);
     }
   };
 
   const handleBack = () => {
     router.back();
+    reset();
   };
+
+  useEffect(() => {
+    const loadAlertData = async () => {
+      if (isEditing && typeof id === "string") {
+        setLoadingAlert(true);
+
+        setTimeout(async () => {
+          try {
+            const existingAlert = await fetchAlertById(id);
+            if (existingAlert) {
+              setValue("alertType", existingAlert.type);
+              setValue("title", existingAlert.title);
+              setValue("description", existingAlert.message);
+              setValue("location", existingAlert.location || "");
+              // Exemplo: setValue("priority", existingAlert.priority || "Low");
+            } else {
+              console.warn("Alerta não encontrado para edição:", id);
+              router.replace("/(tabs)");
+            }
+          } catch (error) {
+            console.error("Erro ao carregar alerta para edição:", error);
+            router.replace("/(tabs)");
+          } finally {
+            setLoadingAlert(false);
+          }
+        }, 2000);
+      } else {
+        setLoadingAlert(false);
+      }
+    };
+
+    loadAlertData();
+  }, [id, isEditing, setValue]);
+
+  if (loadingAlert) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color={Theme.colors.primary} />
+        <Text className="mt-4 text-lg text-gray-600">Loading Alert...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -291,7 +361,9 @@ export default function Regiter() {
                 className="flex-1 bg-primary rounded-xl p-4"
               >
                 <Text className="text-center text-lg text-white font-semibold">
-                  Create Alert
+                  <Text className="text-center text-lg text-white font-semibold">
+                    {isEditing ? "Update Alert" : "Create Alert"}
+                  </Text>
                 </Text>
               </TouchableOpacity>
             </View>
