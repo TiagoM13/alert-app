@@ -118,7 +118,7 @@ export const updateAlert = async (alert: Alert) => {
   try {
     const database = await getDb();
     const result = await database.runAsync(
-      `UPDATE alerts SET title = ?, message = ?, type = ?, updatedAt =, location = ? WHERE id = ?;`,
+      `UPDATE alerts SET title = ?, message = ?, type = ?, updatedAt = ?, location = ? WHERE id = ?;`,
       [
         alert.title,
         alert.message,
