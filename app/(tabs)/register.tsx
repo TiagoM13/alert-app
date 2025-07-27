@@ -2,11 +2,29 @@ import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
 import { Theme } from "@/constants";
 import Octicons from "@expo/vector-icons/Octicons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { router, Stack } from "expo-router";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { twMerge } from "tailwind-merge";
+import { z } from "zod";
+
+const alertSchema = z.object({
+  alertType: z.string().min(1, "Selecione um tipo de alerta"),
+  title: z
+    .string()
+    .min(1, "Título é obrigatório")
+    .max(100, "Título muito longo"),
+  description: z
+    .string()
+    .min(10, "Descrição deve ter pelo menos 10 caracteres")
+    .max(500, "Descrição muito longa"),
+  location: z.string().optional(),
+  priority: z.enum(["Low", "Medium", "High"]),
+});
+
+type AlertFormData = z.infer<typeof alertSchema>;
 
 const buttons = [
   {
@@ -38,12 +56,32 @@ const priorityOptions = [
   },
 ];
 
-export default function Profile() {
-  const [selectedButton, setSelectedButton] = useState<string>("Emergency");
-  const [selectedPriority, setSelectedPriority] = useState<string>("Low");
+export default function Regiter() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<AlertFormData>({
+    resolver: zodResolver(alertSchema),
+    defaultValues: {
+      alertType: "Emergency",
+      title: "",
+      description: "",
+      location: "",
+      priority: "Low",
+    },
+  });
 
-  const handleCreateAlert = () => {
-    console.log("create alert");
+  console.log({ errors });
+
+  const onSubmit = (data: AlertFormData) => {
+    console.log("Form Data:", {
+      alertType: data.alertType,
+      title: data.title,
+      description: data.description,
+      location: data.location,
+      priority: data.priority,
+    });
   };
 
   const handleBack = () => {
@@ -79,97 +117,139 @@ export default function Profile() {
         >
           <Text className="text-lg font-medium mb-2">Select Alert Type</Text>
 
-          <View className="gap-2">
-            {buttons.map((button) => (
-              <TouchableOpacity
-                key={button.label}
-                activeOpacity={0.7}
-                className={twMerge(
-                  "flex-row items-center gap-2 border-2 rounded-xl p-4"
-                )}
-                style={{
-                  borderColor:
-                    selectedButton === button.label
-                      ? colors[button.label]
-                      : "#e5e7eb",
-                }}
-                onPress={() => setSelectedButton(button.label)}
-              >
-                <View
-                  style={{
-                    borderColor: colors[button.label],
-                  }}
-                  className={twMerge("w-8 h-8 border-2 p-1 rounded-full")}
-                >
-                  <View
-                    className="w-full h-full rounded-full"
-                    style={{
-                      backgroundColor:
-                        selectedButton === button.label
-                          ? colors[button.label]
-                          : "transparent",
-                    }}
-                  />
-                </View>
-                <Text
-                  style={{
-                    color: colors[button.label],
-                  }}
-                  className={twMerge("text-lg font-medium")}
-                >
-                  {button.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View className="gap-2 space-y-4 mt-6">
-            <InputText label="Title" placeholder="Enter alert title" />
-            <InputTextarea
-              label="Description"
-              placeholder="Enter detailed description..."
-            />
-            <InputText
-              label="Location (Optional)"
-              placeholder="Enter location"
-            />
-
-            <View className="gap-2">
-              <Text className="text-lg font-medium">Priority Level</Text>
-              <View className="flex-row items-center gap-2">
-                {priorityOptions.map((level) => (
+          {/* Alert Type Selection */}
+          <Controller
+            control={control}
+            name="alertType"
+            render={({ field: { onChange, value } }) => (
+              <View className="gap-2">
+                {buttons.map((button) => (
                   <TouchableOpacity
-                    key={level.label}
+                    key={button.label}
                     activeOpacity={0.7}
-                    onPress={() => setSelectedPriority(level.label)}
-                    className="gap-2 border-2 items-center justify-center rounded-xl px-4 py-2.5 flex-1"
+                    className={twMerge(
+                      "flex-row items-center gap-2 border-2 rounded-xl p-4"
+                    )}
                     style={{
                       borderColor:
-                        selectedPriority === level.label
-                          ? "rgba(59, 130, 246, 0.5)"
-                          : "rgba(0, 0, 0, 0.05)",
-                      backgroundColor:
-                        selectedPriority === level.label
-                          ? "rgba(59, 130, 246, 0.1)"
-                          : "transparent",
+                        value === button.label
+                          ? colors[button.label]
+                          : "#e5e7eb",
                     }}
+                    onPress={() => onChange(button.label)}
                   >
+                    <View
+                      style={{
+                        borderColor: colors[button.label],
+                      }}
+                      className={twMerge("w-8 h-8 border-2 p-1 rounded-full")}
+                    >
+                      <View
+                        className="w-full h-full rounded-full"
+                        style={{
+                          backgroundColor:
+                            value === button.label
+                              ? colors[button.label]
+                              : "transparent",
+                        }}
+                      />
+                    </View>
                     <Text
                       style={{
-                        color:
-                          selectedPriority === level.label
-                            ? "rgba(59, 130, 246, 1)"
-                            : "#000000",
+                        color: colors[button.label],
                       }}
-                      className="text-lg font-medium"
+                      className={twMerge("text-lg font-medium")}
                     >
-                      {level.label}
+                      {button.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+            )}
+          />
+          {errors.alertType && (
+            <Text className="text-red-500 text-sm mt-1">
+              {errors.alertType.message}
+            </Text>
+          )}
+
+          <View className="gap-2 space-y-4 mt-6">
+            {/* Title Input */}
+            <InputText
+              name="title"
+              control={control}
+              label="Title"
+              placeholder="Enter alert title"
+              errorMessage={errors.title?.message}
+            />
+
+            {/* Description Input */}
+            <InputTextarea
+              name="description"
+              control={control}
+              label="Description"
+              placeholder="Enter detailed description..."
+              errorMessage={errors.description?.message}
+            />
+
+            {/* Location Input */}
+            <InputText
+              name="location"
+              control={control}
+              label="Location (Optional)"
+              placeholder="Enter location"
+              errorMessage={errors.location?.message}
+            />
+
+            {/* Priority Selection */}
+            <View className="gap-2">
+              <Text className="text-lg font-medium">Priority Level</Text>
+              <Controller
+                control={control}
+                name="priority"
+                render={({ field: { onChange, value } }) => (
+                  <View className="flex-row items-center gap-2">
+                    {priorityOptions.map((level) => (
+                      <TouchableOpacity
+                        key={level.label}
+                        activeOpacity={0.7}
+                        onPress={() => onChange(level.label)}
+                        className="gap-2 border-2 items-center justify-center rounded-xl px-4 py-2.5 flex-1"
+                        style={{
+                          borderColor:
+                            value === level.label
+                              ? "rgba(59, 130, 246, 0.5)"
+                              : "rgba(0, 0, 0, 0.05)",
+                          backgroundColor:
+                            value === level.label
+                              ? "rgba(59, 130, 246, 0.1)"
+                              : "transparent",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color:
+                              value === level.label
+                                ? "rgba(59, 130, 246, 1)"
+                                : "#000000",
+                          }}
+                          className="text-lg font-medium"
+                        >
+                          {level.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              />
+              {errors.priority && (
+                <Text className="text-red-500 text-sm mt-1">
+                  {errors.priority.message}
+                </Text>
+              )}
             </View>
 
+            {/* Action Buttons */}
             <View className="flex-row items-center justify-between gap-2 mt-10 mb-10">
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -182,7 +262,7 @@ export default function Profile() {
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={handleCreateAlert}
+                onPress={handleSubmit(onSubmit)}
                 className="flex-1 bg-primary rounded-xl p-4"
               >
                 <Text className="text-center text-lg text-white font-semibold">
