@@ -16,15 +16,13 @@ export function AlertList({ alerts, isLoading }: AlertListProps) {
 
   return (
     <View className="flex-1">
-      {isLoading ? (
+      {isLoading && (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={Theme.colors.primary} />
         </View>
-      ) : alerts.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">No alerts found</Text>
-        </View>
-      ) : (
+      )}
+
+      {alerts.length > 0 && !isLoading && (
         <FlatList
           data={alerts}
           renderItem={renderNotificationItem}
@@ -36,6 +34,12 @@ export function AlertList({ alerts, isLoading }: AlertListProps) {
           }}
           showsVerticalScrollIndicator={false}
         />
+      )}
+
+      {!isLoading && alerts.length === 0 && (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-gray-500">No alerts found</Text>
+        </View>
       )}
     </View>
   );

@@ -1,9 +1,11 @@
+import { initDatabase } from "@/database/database";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
+import "react-native-get-random-values";
 import "react-native-reanimated";
 import "../global.css";
 
@@ -17,11 +19,11 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simular delay de verificação (ex: AsyncStorage ou API)
+    initDatabase();
+
     const checkAuth = async () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      // Simular usuário autenticado (troque para false para testar auth)
-      setIsAuthenticated(false);
+      setIsAuthenticated(true);
       setLoading(false);
     };
     checkAuth();

@@ -1,13 +1,16 @@
 import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
+import { AlertType } from "@/components/alerts/types";
 import { Theme } from "@/constants";
+import { insertAlert } from "@/database/database";
 import Octicons from "@expo/vector-icons/Octicons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, Stack } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { twMerge } from "tailwind-merge";
+import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
 const alertSchema = z.object({
@@ -56,10 +59,18 @@ const priorityOptions = [
   },
 ];
 
+const defaultValues = {
+  alertType: "Emergency",
+  title: "",
+  description: "",
+  location: "",
+  priority: "Low",
+};
 export default function Regiter() {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<AlertFormData>({
     resolver: zodResolver(alertSchema),
@@ -74,14 +85,28 @@ export default function Regiter() {
 
   console.log({ errors });
 
-  const onSubmit = (data: AlertFormData) => {
-    console.log("Form Data:", {
-      alertType: data.alertType,
-      title: data.title,
-      description: data.description,
-      location: data.location,
-      priority: data.priority,
-    });
+  const onSubmit = async (data: AlertFormData) => {
+    try {
+      const newAlert = {
+        id: uuidv4(),
+        title: data.title,
+        message: data.description,
+        type: data.alertType as AlertType,
+        location: data.location,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await insertAlert(newAlert);
+      console.log("Alerta salvo no banco de dados:", newAlert);
+      router.push("/(tabs)");
+      Alert.alert("Alerta criado com sucesso");
+      reset({
+        ...defaultValues,
+        priority: defaultValues.priority as "Low" | "Medium" | "High",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar alerta:", error);
+    }
   };
 
   const handleBack = () => {

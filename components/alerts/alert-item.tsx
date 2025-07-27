@@ -67,12 +67,16 @@ export const AlertItem: React.FC<NotificationItemProps> = ({ alert }) => {
 
       {/* Footer */}
       <View className="flex-row items-center gap-1.5 mt-1">
-        <MaterialIcons
-          name="location-on"
-          size={16}
-          color={Theme.colors.textLabel}
-        />
-        <Text className="text-sm text-textLabel">Downtown District</Text>
+        {alert.location && (
+          <>
+            <MaterialIcons
+              name="location-on"
+              size={16}
+              color={Theme.colors.textLabel}
+            />
+            <Text className="text-sm text-textLabel">{alert.location}</Text>
+          </>
+        )}
         <SimpleLineIcons
           name="clock"
           size={12}

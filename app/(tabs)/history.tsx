@@ -1,10 +1,12 @@
 import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
-import { alerts } from "@/database/alerts";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
+import { Alert } from "@/components/alerts/types";
+import { fetchAlerts } from "@/database/database";
+import { useFocusEffect } from "@react-navigation/native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -13,7 +15,7 @@ enum Tabs {
   All = "All",
   Emergency = "Emergency",
   Warning = "Warning",
-  Info = "Info",
+  Information = "Information", // Renomeado de 'Info' para 'Information' para corresponder ao tipo AlertType
 }
 
 const tabs = [
@@ -31,20 +33,43 @@ const tabs = [
   },
   {
     label: "Info",
-    value: Tabs.Info,
+    value: Tabs.Information,
   },
 ];
 
 export default function History() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = React.useState<Tabs>(Tabs.All);
+  const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
+
+  const loadAlerts = async () => {
+    setIsLoading(true);
+
+    setTimeout(async () => {
+      try {
+        const data = await fetchAlerts();
+        setAllAlerts(data);
+      } catch (error) {
+        console.error("Erro ao carregar alertas:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 2000);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAlerts();
+      return () => {};
+    }, [])
+  );
 
   const filteredAlerts = useMemo(() => {
-    return alerts.filter((alert) => {
+    return allAlerts.filter((alert) => {
       if (selectedTab === Tabs.All) return true;
       return alert.type === selectedTab;
     });
-  }, [selectedTab]);
+  }, [selectedTab, allAlerts]);
 
   const handleTabPress = (tab: Tabs) => {
     setSelectedTab(tab);
@@ -57,16 +82,6 @@ export default function History() {
   const handleUserAvatarPress = () => {
     router.push("/profile");
   };
-
-  const handleAddAlert = () => {
-    router.push("/register");
-  };
-
-  useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
