@@ -83,6 +83,10 @@ export default function History() {
     router.push("/profile");
   };
 
+  const handleAlertPress = (alertId: string) => {
+    router.push({ pathname: "/register", params: { id: alertId } });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
@@ -125,7 +129,12 @@ export default function History() {
           </View>
         )}
 
-        <AlertList alerts={filteredAlerts} isLoading={isLoading} />
+        <AlertList
+          alerts={filteredAlerts}
+          isLoading={isLoading}
+          onAlertPress={handleAlertPress}
+          onAlertDeleted={loadAlerts}
+        />
       </View>
     </SafeAreaView>
   );

@@ -1,7 +1,9 @@
 import { Theme } from "@/constants";
-import React from "react";
+import { deleteAlert } from "@/database/database";
+import React, { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
+import { ConfirmationModal } from "../modal/confirmation-modal";
 import { AlertItem } from "./alert-item";
 import { Alert } from "./types";
 
@@ -9,16 +11,62 @@ interface AlertListProps {
   alerts: Alert[];
   isLoading?: boolean;
   onAlertPress?: (id: string) => void;
+  onAlertDeleted?: () => void;
 }
 
-export function AlertList({ alerts, isLoading, onAlertPress }: AlertListProps) {
+export function AlertList({
+  alerts,
+  isLoading,
+  onAlertPress,
+  onAlertDeleted,
+}: AlertListProps) {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [alertToDelete, setAlertToDelete] = useState<string | null>(null);
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
+
+  const handleDeleteRequest = (id: string) => {
+    setAlertToDelete(id);
+    setModalVisible(true);
+    setSwipedItemId(id);
+  };
+
+  const handleCancelDelete = () => {
+    setModalVisible(false);
+    setAlertToDelete(null);
+    setSwipedItemId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (alertToDelete) {
+      try {
+        await deleteAlert(alertToDelete);
+        setModalVisible(false);
+        setAlertToDelete(null);
+        setSwipedItemId(null); // Limpa o ID para fechar o arraste
+        if (onAlertDeleted) {
+          onAlertDeleted();
+        }
+      } catch (error) {
+        console.error("Erro ao deletar o alerta:", error);
+      }
+    }
+  };
+
   const renderNotificationItem = ({
     item,
     index,
   }: {
     item: Alert;
     index: number;
-  }) => <AlertItem alert={item} onPress={onAlertPress} index={index} />;
+  }) => (
+    <AlertItem
+      alert={item}
+      onPress={onAlertPress}
+      onDeleteRequest={handleDeleteRequest}
+      resetSwipe={swipedItemId === item.id}
+      index={index}
+    />
+  );
 
   return (
     <View className="flex-1">
@@ -43,6 +91,12 @@ export function AlertList({ alerts, isLoading, onAlertPress }: AlertListProps) {
           showsVerticalScrollIndicator={false}
         />
       )}
+      <ConfirmationModal
+        isVisible={modalVisible}
+        message="Tem certeza que deseja deletar este alerta?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </View>
   );
 }

@@ -60,6 +60,7 @@ export default function Home() {
           alerts={currentAlerts}
           onAlertPress={handleAlertPress}
           isLoading={isLoading}
+          onAlertDeleted={loadAlerts}
         />
       </View>
     </SafeAreaView>
