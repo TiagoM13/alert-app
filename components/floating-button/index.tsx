@@ -1,24 +1,31 @@
 import { Theme } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { Pressable } from "react-native";
 import { twMerge } from "tailwind-merge";
 
 export const FloatingButton: React.FC<
-  React.ComponentPropsWithoutRef<typeof TouchableOpacity>
+  React.ComponentPropsWithoutRef<typeof Pressable>
 > = ({ className, ...props }) => {
   return (
-    <TouchableOpacity
+    <Pressable
+      onPress={() => router.push("/register")}
       className={twMerge(
-        "absolute bottom-20 right-5 w-[60px] h-[60px] rounded-full",
-        "bg-primary items-center justify-center",
-        "shadow-lg shadow-black/20 elevation-5",
+        "absolute -top-6 w-[70px] h-[70px] bg-primary rounded-full justify-center items-center shadow-md",
         className
       )}
+      style={{
+        alignSelf: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 2,
+      }}
       {...props}
-      activeOpacity={0.7}
     >
-      <Ionicons name="add" size={28} color={Theme.colors.white} />
-    </TouchableOpacity>
+      <Ionicons name="add" size={40} color={Theme.colors.white} />
+    </Pressable>
   );
 };

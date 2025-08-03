@@ -1,9 +1,10 @@
+import { FloatingButton } from "@/components/floating-button";
 import { Theme } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { router, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
-import { Pressable } from "react-native";
+import { View } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -50,20 +51,9 @@ export default function TabLayout() {
           title: "",
           tabBarIcon: () => null,
           tabBarButton: () => (
-            <Pressable
-              onPress={() => router.push("/register")}
-              className="absolute -top-6 w-[70px] h-[70px] bg-primary rounded-full justify-center items-center shadow-md"
-              style={{
-                alignSelf: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-            >
-              <Ionicons name="add" size={40} color={Theme.colors.white} />
-            </Pressable>
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <FloatingButton />
+            </View>
           ),
         }}
       />

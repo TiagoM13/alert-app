@@ -84,7 +84,7 @@ export default function Login() {
                   className="flex-row items-center justify-center"
                 >
                   <View className="flex-row items-center justify-center gap-2 bg-white py-3 border border-cardBackground rounded-lg p-2 w-52">
-                    <Ionicons name="logo-google" size={24} color="red" />{" "}
+                    <Ionicons name="logo-google" size={24} color="red" />
                     <Text className="text-black text-xl">Google</Text>
                   </View>
                 </TouchableOpacity>
