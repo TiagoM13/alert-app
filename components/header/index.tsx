@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderComponentProps> = ({
   onUserAvatarPress,
 }) => {
   return (
-    <View className="flex-row justify-between items-center px-5 py-[15px] border border-cardBackground bg-transparent">
+    <View className="flex-row justify-between items-center px-5 py-4 border-b border-cardBackground bg-transparent">
       <Text className="text-black text-3xl font-semibold">{title}</Text>
 
       <View className="flex flex-row items-center gap-4">

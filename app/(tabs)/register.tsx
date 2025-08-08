@@ -3,10 +3,12 @@ import { InputTextarea } from "@/components/_ui/InputTextarea";
 import { Alert, AlertType } from "@/components/alerts/types";
 import { Theme } from "@/constants";
 import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
+import Entypo from "@expo/vector-icons/Entypo";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -276,6 +278,9 @@ export default function Regiter() {
               label="Title"
               placeholder="Enter alert title"
               errorMessage={errors.title?.message}
+              leftIcon={
+                <Entypo name="text" size={24} color={Theme.colors.textLabel} />
+              }
             />
 
             {/* Description Input */}
@@ -285,6 +290,9 @@ export default function Regiter() {
               label="Description"
               placeholder="Enter detailed description..."
               errorMessage={errors.description?.message}
+              leftIcon={
+                <Entypo name="text" size={24} color={Theme.colors.textLabel} />
+              }
             />
 
             {/* Location Input */}
@@ -294,6 +302,13 @@ export default function Regiter() {
               label="Location (Optional)"
               placeholder="Enter location"
               errorMessage={errors.location?.message}
+              leftIcon={
+                <Ionicons
+                  name="location-sharp"
+                  size={24}
+                  color={Theme.colors.textLabel}
+                />
+              }
             />
 
             {/* Priority Selection */}

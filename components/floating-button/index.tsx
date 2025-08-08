@@ -12,7 +12,7 @@ export const FloatingButton: React.FC<
     <Pressable
       onPress={() => router.push("/register")}
       className={twMerge(
-        "absolute -top-6 w-[70px] h-[70px] bg-primary rounded-full justify-center items-center shadow-md",
+        "absolute -top-7 w-[65px] h-[65px] bg-primary rounded-full justify-center items-center shadow-md",
         className
       )}
       style={{

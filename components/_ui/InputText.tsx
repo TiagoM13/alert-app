@@ -55,16 +55,19 @@ export const InputText: React.FC<InputTextProps> = ({
       <View className="relative">
         <TextInput
           className={twMerge(
-            "border-2 h-16 rounded-xl p-3 bg-white placeholder:text-gray-400 text-lg transition-all duration-300 ease-in-out",
+            "border-2 h-14 px-3 rounded-xl bg-white text-zinc-900 text-lg transition-all duration-300 ease-in-out",
             error ? "border-alert" : "border-gray-200",
             leftIcon ? "pl-12" : "",
             rightIcon || hasPasswordToggle ? "pr-12" : "",
             rest.className
           )}
+          placeholderTextColor={"#6B7280"}
           placeholder={placeholder}
           onChangeText={onChange}
           value={value}
+          textAlignVertical="center"
           secureTextEntry={shouldShowPassword}
+          style={[{ lineHeight: 20 }]}
           {...rest}
         />
 
@@ -75,7 +78,7 @@ export const InputText: React.FC<InputTextProps> = ({
             disabled={!onLeftIconPress}
             activeOpacity={onLeftIconPress ? 0.7 : 1}
           >
-            <View className="w-6 h-6 items-center justify-center">
+            <View className="w-6 h-6 mb-1 items-center justify-center">
               {leftIcon}
             </View>
           </TouchableOpacity>
@@ -83,7 +86,7 @@ export const InputText: React.FC<InputTextProps> = ({
 
         {(rightIcon || hasPasswordToggle) && (
           <TouchableOpacity
-            className="absolute right-4 top-1/2 -translate-y-1/2"
+            className="absolute right-3 top-1/2 -translate-y-1/2"
             onPress={
               hasPasswordToggle ? togglePasswordVisibility : onRightIconPress
             }

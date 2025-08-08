@@ -13,7 +13,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: Theme.colors.primary,
         tabBarLabelStyle: {
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: "600",
         },
         tabBarIconStyle: {
@@ -40,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <MaterialIcons name="home" size={32} color={color} />
+            <MaterialIcons name="home" size={30} color={color} />
           ),
         }}
       />
@@ -63,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: "History",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="time" size={32} color={color} />
+            <Ionicons name="time" size={30} color={color} />
           ),
         }}
       />
