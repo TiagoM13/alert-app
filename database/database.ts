@@ -24,9 +24,19 @@ export const initDatabase = async () => {
         location TEXT,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY NOT NULL,
+        fullName TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phoneNumber TEXT,
+        location TEXT,
+        password:  TEXT NOT NULL, 
       );`
     );
-    console.log("Tabela 'alerts' criada com sucesso ou já existente.");
+    console.log(
+      "Tabelas 'alerts' e 'users' criadas com sucesso ou já existentes."
+    );
   } catch (error) {
     console.error("Erro ao inicializar o banco de dados:", error);
     throw error;
@@ -136,6 +146,57 @@ export const updateAlert = async (alert: Alert) => {
     );
   } catch (error) {
     console.error("Erro ao atualizar alerta:", error);
+    throw error;
+  }
+};
+
+interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  location?: string;
+  password?: string;
+}
+
+export const insertUser = async (user: User) => {
+  try {
+    const database = await getDb();
+    const result = await database.runAsync(
+      `INSERT INTO users (id, fullName, email, phoneNumber, location, password) VALUES (?, ?. ?, ?, ?, ?)`,
+      [
+        user.id,
+        user.fullName,
+        user.email,
+        user.phoneNumber || "",
+        user.location || "",
+        user.password || "",
+      ]
+    );
+    console.log(
+      "Usuário inserido com sucesso",
+      user.id,
+      "Changes: ",
+      result.changes
+    );
+  } catch (error) {
+    console.error("Erro ao inserir usuário:", error);
+    throw error;
+  }
+};
+
+export const findUserByEmail = async (
+  email: string
+): Promise<User | undefined> => {
+  try {
+    const database = await getDb();
+    const row = await database.getFirstAsync<User>(
+      `SELECT * FROM users WHERE email = ?`,
+      [email]
+    );
+    return row as User;
+  } catch (error) {
+    console.error("Erro ao buscar usuário por email:", error);
     throw error;
   }
 };
