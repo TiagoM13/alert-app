@@ -200,3 +200,17 @@ export const findUserByEmail = async (
     throw error;
   }
 };
+
+export const findUserById = async (id: string): Promise<User | undefined> => {
+  try {
+    const database = await getDb();
+    const row = await database.getFirstAsync<User>(
+      `SELECT * FROM users WHERE id = ?;`,
+      [id]
+    );
+    return row as User;
+  } catch (error) {
+    console.error("Erro ao buscar usuário por ID:", error);
+    throw error;
+  }
+};

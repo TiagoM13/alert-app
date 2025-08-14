@@ -41,7 +41,7 @@ export default function Login() {
       console.log({ user });
 
       if (user && user.password === data.password) {
-        await signIn(user.id);
+        await signIn(user.id, user);
 
         Toast.show({
           type: "success",

@@ -1,5 +1,6 @@
 import { InputText } from "@/components/_ui/InputText";
 import { Theme } from "@/constants";
+import { useAuth } from "@/context/auth";
 import { insertUser } from "@/database/database";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Octicons from "@expo/vector-icons/Octicons";
@@ -28,6 +29,7 @@ type CreateLoginFormData = z.infer<typeof createLoginSchema>;
 
 export default function CreateLogin() {
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const {
     control,
@@ -62,7 +64,10 @@ export default function CreateLogin() {
 
       await insertUser(newUser);
       console.log("Usuário cadastrado com sucesso!");
-      router.replace("/(auth)");
+
+      // Sign in the user after creating account
+      await signIn(newUser.id, newUser);
+      router.replace("/(tabs)");
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
     }
