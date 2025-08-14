@@ -44,7 +44,10 @@ export default function RootLayout() {
         <SQLiteProvider databaseName="alerts.db">
           <SafeAreaProvider>
             <AuthProvider>
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack
+                initialRouteName="(tabs)"
+                screenOptions={{ headerShown: false }}
+              >
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="+not-found" />

@@ -1,10 +1,21 @@
+import { ProfileMenuItem } from "@/components/profile-menu-item";
+import { Theme } from "@/constants";
 import { useAuth } from "@/context/auth";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Octicons from "@expo/vector-icons/Octicons";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuth();
+
+  const handleBack = () => {
+    router.back();
+  };
 
   const handleSignOut = async () => {
     Alert.alert("Sair", "Tem certeza que deseja sair?", [
@@ -31,78 +42,145 @@ export default function Profile() {
   );
 
   return (
-    <>
+    <SafeAreaView className="flex-1 bg-white">
       <Stack.Screen
         options={{
           headerShown: false,
         }}
       />
+      {/* Header */}
+      <View className="flex-row justify-between items-center py-4 px-6 border-b border-cardBackground">
+        <TouchableOpacity activeOpacity={0.7} onPress={handleBack}>
+          <Octicons name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
 
-      <View className="flex-1 bg-white">
-        {/* Header */}
-        <View className="bg-blue-600 pt-12 pb-6 px-6">
-          <Text className="text-white text-3xl font-bold text-center">
-            Perfil
-          </Text>
-        </View>
+        <Text className="text-black text-[24px] font-semibold">Profile</Text>
+        <Text className="text-2xl text-center"></Text>
+      </View>
 
-        {/* User Info */}
-        <View className="flex-1 px-6 pt-8">
-          <View className="bg-gray-50 rounded-lg p-6 mb-6">
-            <Text className="text-lg font-semibold text-gray-700 mb-4">
-              Informações do Usuário
-            </Text>
+      <ScrollView className="flex-1">
+        <View className="flex-1 pt-6">
+          <View className="p-6 items-center px-6">
+            <View className="text-lg font-semibold bg-cardBackground rounded-full w-24 h-24 items-center justify-center mb-4">
+              <MaterialIcons
+                name="person"
+                size={45}
+                color={Theme.colors.iconColor}
+              />
+            </View>
 
-            <View className="space-y-4">
-              <View>
-                <Text className="text-sm text-gray-500 mb-1">Nome</Text>
-                <Text className="text-lg text-gray-900 font-medium">
-                  {user?.fullName || "Nome não disponível"}
-                </Text>
+            <View className="items-center">
+              <Text className="text-2xl text-textDescription font-bold">
+                {user?.fullName || "Nome não disponível"}
+              </Text>
+              <Text className="text-lg text-textLabel">
+                {user?.email || "Email não disponível"}
+              </Text>
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name="location-sharp"
+                  size={16}
+                  color={Theme.colors.textLabel}
+                />
+                <Text className="text-lg text-textLabel">{user?.location}</Text>
               </View>
-
-              <View>
-                <Text className="text-sm text-gray-500 mb-1">Email</Text>
-                <Text className="text-lg text-gray-900 font-medium">
-                  {user?.email || "Email não disponível"}
-                </Text>
-              </View>
-
-              {user?.phoneNumber && (
-                <View>
-                  <Text className="text-sm text-gray-500 mb-1">Telefone</Text>
-                  <Text className="text-lg text-gray-900 font-medium">
-                    {user.phoneNumber}
-                  </Text>
-                </View>
-              )}
-
-              {user?.location && (
-                <View>
-                  <Text className="text-sm text-gray-500 mb-1">
-                    Localização
-                  </Text>
-                  <Text className="text-lg text-gray-900 font-medium">
-                    {user.location}
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
-        </View>
 
-        {/* Sign Out Button */}
-        <View className="px-6 pb-8">
-          <TouchableOpacity
-            onPress={handleSignOut}
-            className="bg-red-500 py-4 rounded-lg"
-          >
-            <Text className="text-white text-center text-lg font-semibold">
-              Sair
+          {/* Status */}
+          <View className="py-8 flex-row gap-5 justify-center bg-cardBackground/20 px-6">
+            <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
+              <Text className="text-primary font-bold text-4xl">47</Text>
+              <Text className="text-textDescription text-base text-center text-wrap font-medium">
+                Alerts Received
+              </Text>
+            </View>
+            <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
+              <Text className="text-success font-bold text-4xl">42</Text>
+              <Text className="text-textDescription text-base text-center text-wrap font-medium">
+                Resolved
+              </Text>
+            </View>
+            <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
+              <Text className="text-warning font-bold text-4xl">5</Text>
+              <Text className="text-textDescription text-base text-center text-wrap font-medium">
+                Active
+              </Text>
+            </View>
+          </View>
+
+          {/* Settings */}
+          <View className="px-10 mt-6">
+            <Text className="text-xl text-textDescription font-semibold">
+              PERSONAL
             </Text>
-          </TouchableOpacity>
+
+            <ProfileMenuItem
+              onPress={() => {}}
+              iconName="person-fill"
+              iconColor={Theme.colors.primary}
+              iconBg={"rgba(33 150 243 / 0.1)"}
+              title="Edit Profile"
+              description="Update your personal details"
+            />
+
+            <ProfileMenuItem
+              onPress={() => {}}
+              iconName="bell-fill"
+              iconColor={Theme.colors.success}
+              iconBg={"rgba(76 175 80 / 0.1)"}
+              title="Notification Settings"
+              description="Manage alert preferences"
+            />
+
+            <ProfileMenuItem
+              onPress={() => {}}
+              iconName="location"
+              iconColor={Theme.colors.warning}
+              iconBg={"rgba(255 184 77 / 0.1)"}
+              title="Location Services"
+              description="Manage location access"
+            />
+          </View>
+
+          <View className="px-10 mt-6">
+            <Text className="text-xl text-textDescription font-semibold">
+              SUPPORT
+            </Text>
+
+            <ProfileMenuItem
+              onPress={() => {}}
+              iconName="question"
+              iconColor={"#a855f7"}
+              iconBg={"rgba(168 85 247 / 0.1)"}
+              title="Help Center"
+              description="FAQs and support"
+            />
+
+            <ProfileMenuItem
+              onPress={() => {}}
+              iconName="shield-lock"
+              iconColor={Theme.colors.textDescription}
+              iconBg={"rgba(75 85 99 / 0.1)"}
+              title="Privacy Policy"
+              description="How we protect your data"
+            />
+
+            <ProfileMenuItem
+              onPress={handleSignOut}
+              iconName="sign-out"
+              iconColor={Theme.colors.alert}
+              iconBg={"rgba(255 68 68 / 0.1)"}
+              title="Sign Out"
+              description="Logout from your account"
+            />
+          </View>
+
+          <View className="items-center text-textDescription/10 justify-center px-6 py-4 mt-8">
+            <Text className="text-textLabel font-medium">AlertApp v1.0.0</Text>
+          </View>
         </View>
-      </View>
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
