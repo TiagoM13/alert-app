@@ -10,6 +10,8 @@ import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { version } from "../package.json";
+
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuth();
 
@@ -177,7 +179,9 @@ export default function Profile() {
           </View>
 
           <View className="items-center text-textDescription/10 justify-center px-6 py-4 mt-8">
-            <Text className="text-textLabel font-medium">AlertApp v1.0.0</Text>
+            <Text className="text-textLabel font-medium">
+              AlertApp v{version}
+            </Text>
           </View>
         </View>
       </ScrollView>
