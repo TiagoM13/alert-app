@@ -1,15 +1,71 @@
 import { InputText } from "@/components/_ui/InputText";
 import { Theme } from "@/constants";
+import { useAuth } from "@/context/auth";
+import { findUserByEmail } from "@/database/database";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
+import { useForm } from "react-hook-form";
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import Toast from "react-native-toast-message";
+import z from "zod";
+
+const loginSchema = z.object({
+  email: z.email("Formato de e-mail inválido"),
+  password: z.string().min(1, "A senha é obrigatória"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const router = useRouter();
+  const { signIn } = useAuth();
 
-  const handleLogin = () => {
-    router.push("/(tabs)");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const handleLogin = async (data: LoginFormData) => {
+    try {
+      const user = await findUserByEmail(data.email);
+
+      console.log({ user });
+
+      if (user && user.password === data.password) {
+        await signIn(user.id);
+
+        Toast.show({
+          type: "success",
+          text1: "Login success",
+          text2: `Welcome, ${user.fullName}`,
+        });
+
+        router.push("/(tabs)");
+      } else {
+        // Credenciais inválidas
+        Toast.show({
+          type: "error",
+          text1: "Login falhou",
+          text2: "E-mail ou senha inválidos.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro no login", error);
+      Toast.show({
+        type: "error",
+        text1: "Erro no sistema",
+        text2: "Não foi possível realizar o login.",
+      });
+    }
   };
 
   return (
@@ -29,6 +85,9 @@ export default function Login() {
 
           <View className="flex-1 mt-6">
             <InputText
+              name="email"
+              control={control}
+              errorMessage={errors.email?.message}
               leftIcon={
                 <MaterialIcons
                   name="email"
@@ -40,6 +99,9 @@ export default function Login() {
               placeholder="Enter your email"
             />
             <InputText
+              name="password"
+              control={control}
+              errorMessage={errors.password?.message}
               leftIcon={
                 <MaterialIcons
                   name="lock"
@@ -49,14 +111,15 @@ export default function Login() {
               }
               label="Password"
               secureTextEntry
+              autoComplete="off"
+              textContentType="password"
               placeholder="Enter your password"
-              onLeftIconPress={() => {}}
             />
 
             <TouchableOpacity
               activeOpacity={0.7}
               className="bg-primary rounded-full p-4 mt-4"
-              onPress={handleLogin}
+              onPress={handleSubmit(handleLogin)}
             >
               <Text className="text-white text-xl text-center font-semibold">
                 Login

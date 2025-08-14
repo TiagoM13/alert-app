@@ -31,7 +31,7 @@ export const initDatabase = async () => {
         email TEXT NOT NULL,
         phoneNumber TEXT,
         location TEXT,
-        password:  TEXT NOT NULL, 
+        password TEXT NOT NULL
       );`
     );
     console.log(
@@ -163,7 +163,7 @@ export const insertUser = async (user: User) => {
   try {
     const database = await getDb();
     const result = await database.runAsync(
-      `INSERT INTO users (id, fullName, email, phoneNumber, location, password) VALUES (?, ?. ?, ?, ?, ?)`,
+      `INSERT INTO users (id, fullName, email, phoneNumber, location, password) VALUES (?, ?, ?, ?, ?, ?);`,
       [
         user.id,
         user.fullName,
@@ -191,7 +191,7 @@ export const findUserByEmail = async (
   try {
     const database = await getDb();
     const row = await database.getFirstAsync<User>(
-      `SELECT * FROM users WHERE email = ?`,
+      `SELECT * FROM users WHERE email = ?;`,
       [email]
     );
     return row as User;
