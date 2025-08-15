@@ -38,32 +38,29 @@ export default function Login() {
     try {
       const user = await findUserByEmail(data.email);
 
-      console.log({ user });
-
       if (user && user.password === data.password) {
         await signIn(user.id, user);
 
         Toast.show({
           type: "success",
-          text1: "Login success",
+          text1: "Login successful",
           text2: `Welcome, ${user.fullName}`,
         });
 
         router.push("/(tabs)");
       } else {
-        // Credenciais inválidas
         Toast.show({
           type: "error",
-          text1: "Login falhou",
-          text2: "E-mail ou senha inválidos.",
+          text1: "Login failed",
+          text2: "Invalid email or password.",
         });
       }
     } catch (error) {
       console.error("Erro no login", error);
       Toast.show({
         type: "error",
-        text1: "Erro no sistema",
-        text2: "Não foi possível realizar o login.",
+        text1: "System Error",
+        text2: "Unable to complete login.",
       });
     }
   };
@@ -79,7 +76,7 @@ export default function Login() {
             <Text className="text-black text-3xl font-bold">AlertApp</Text>
           </View>
 
-          <Text className="text-black font-semibold text-center text-xl mt-2">
+          <Text className="text-black text-center text-xl mt-2">
             Stay informed with real-time alerts
           </Text>
 
@@ -128,37 +125,37 @@ export default function Login() {
 
             <View className="flex-row items-center justify-center mt-4">
               <TouchableOpacity activeOpacity={0.7}>
-                <Text className="text-primary text-xl">Forgot password?</Text>
+                <Text className="text-primary text-lg">Forgot password?</Text>
               </TouchableOpacity>
             </View>
 
             <View className="flex-row items-center justify-center mt-4 mb-4 pb-4">
-              <View className="w-32 h-0.5 bg-cardBackground" />
-              <Text className="text-black text-xl text-center mx-4">
+              <View className="flex-1 h-0.5 bg-cardBackground" />
+              <Text className="text-black text-center mx-4">
                 Or continue with
               </Text>
-              <View className="w-32 h-0.5 bg-cardBackground" />
+              <View className="flex-1 h-0.5 bg-cardBackground" />
             </View>
 
-            <View className="flex-row items-center justify-center mt-4">
-              <View className="flex-row items-center justify-center mr-2">
+            <View className="flex-row items-center gap-4 justify-center">
+              <View className="flex-row flex-1 items-center justify-center">
                 <TouchableOpacity
                   activeOpacity={0.7}
                   className="flex-row items-center justify-center"
                 >
-                  <View className="flex-row items-center justify-center gap-2 bg-white py-3 border border-cardBackground rounded-lg p-2 w-52">
+                  <View className="flex-row items-center justify-center gap-2 bg-white py-3 border border-cardBackground rounded-lg p-2 flex-1">
                     <Ionicons name="logo-google" size={24} color="red" />
                     <Text className="text-black text-xl">Google</Text>
                   </View>
                 </TouchableOpacity>
               </View>
 
-              <View className="flex-row items-center justify-center ml-2">
+              <View className="flex-row flex-1 items-center justify-center">
                 <TouchableOpacity
                   activeOpacity={0.7}
                   className="flex-row items-center justify-center"
                 >
-                  <View className="flex-row items-center justify-center gap-2 bg-white border py-3 border-cardBackground rounded-lg p-2 w-52">
+                  <View className="flex-row items-center justify-center gap-2 bg-white border py-3 border-cardBackground rounded-lg p-2 flex-1">
                     <Ionicons name="logo-apple" size={24} color="black" />
                     <Text className="text-black text-xl">Apple</Text>
                   </View>
@@ -167,8 +164,8 @@ export default function Login() {
             </View>
           </View>
 
-          <View className="flex-row items-center justify-center mt-4">
-            <Text className="text-black text-xl">
+          <View className="flex-row items-center justify-center">
+            <Text className="text-black text-lg">
               Don&apos;t have an account?
             </Text>
 
@@ -176,7 +173,7 @@ export default function Login() {
               activeOpacity={0.7}
               onPress={() => router.push("/create-login")}
             >
-              <Text className="text-primary font-bold text-lg"> Sign up</Text>
+              <Text className="text-primary font-medium text-lg"> Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>

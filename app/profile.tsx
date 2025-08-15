@@ -78,14 +78,18 @@ export default function Profile() {
               <Text className="text-lg text-textLabel">
                 {user?.email || "Email não disponível"}
               </Text>
-              <View className="flex-row items-center gap-2">
-                <Ionicons
-                  name="location-sharp"
-                  size={16}
-                  color={Theme.colors.textLabel}
-                />
-                <Text className="text-lg text-textLabel">{user?.location}</Text>
-              </View>
+              {user?.location && (
+                <View className="flex-row items-center gap-2">
+                  <Ionicons
+                    name="location-sharp"
+                    size={16}
+                    color={Theme.colors.textLabel}
+                  />
+                  <Text className="text-lg text-textLabel">
+                    {user?.location}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 

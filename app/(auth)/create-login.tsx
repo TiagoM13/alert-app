@@ -9,7 +9,9 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
-import z, { uuidv4 } from "zod";
+import Toast from "react-native-toast-message";
+import { v4 as uuidv4 } from "uuid";
+import z from "zod";
 
 const createLoginSchema = z
   .object({
@@ -51,10 +53,10 @@ export default function CreateLogin() {
     router.back();
   };
 
-  const onSubmi = async (data: CreateLoginFormData) => {
+  const onSubmit = async (data: CreateLoginFormData) => {
     try {
       const newUser = {
-        id: `${uuidv4()}`,
+        id: uuidv4(),
         fullName: data.fullName,
         email: data.email,
         phoneNumber: data.phoneNumber || "",
@@ -62,14 +64,26 @@ export default function CreateLogin() {
         password: data.password,
       };
 
+      console.log({ newUser });
+
       await insertUser(newUser);
       console.log("Usuário cadastrado com sucesso!");
 
-      // Sign in the user after creating account
-      await signIn(newUser.id, newUser);
-      router.replace("/(tabs)");
+      Toast.show({
+        type: "success",
+        text1: "Account created",
+        text2: "You can now log in!",
+      });
+
+      router.replace("/(auth)");
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
+
+      Toast.show({
+        type: "error",
+        text1: "Registration failed",
+        text2: "An error occurred while creating your account.",
+      });
     }
   };
 
@@ -87,7 +101,7 @@ export default function CreateLogin() {
             </Text>
           </View>
 
-          <Text className="text-xl font-semibold my-4">
+          <Text className="text-xl my-4">
             Join AlertApp to stay information
           </Text>
 
@@ -188,7 +202,7 @@ export default function CreateLogin() {
           </View>
 
           <TouchableOpacity
-            onPress={handleSubmit(onSubmi)}
+            onPress={handleSubmit(onSubmit)}
             activeOpacity={0.7}
             className="bg-primary rounded-full p-4"
           >
