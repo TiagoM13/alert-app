@@ -3,16 +3,37 @@ import { Theme } from "@/constants";
 import { useAuth } from "@/context/auth";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Redirect, Tabs } from "expo-router";
-import React from "react";
-import { View } from "react-native";
+import { Redirect, Tabs, usePathname } from "expo-router";
+import React, { useEffect, useRef } from "react";
+import { Animated, View } from "react-native";
 
 export default function TabLayout() {
   const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
 
   if (!isAuthenticated) {
     return <Redirect href={"/(auth)"} />;
   }
+
+  const translateY = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const isRegister = pathname === "/register";
+
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: isRegister ? 100 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: isRegister ? 0 : 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [pathname]);
 
   return (
     <Tabs
@@ -40,6 +61,22 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: -2 },
           shadowRadius: 4,
         },
+        animation: "shift",
+      }}
+      tabBar={(props) => {
+        const DefaultTabBar =
+          require("@react-navigation/bottom-tabs").BottomTabBar;
+
+        return (
+          <Animated.View
+            style={{
+              transform: [{ translateY }],
+              opacity,
+            }}
+          >
+            <DefaultTabBar {...props} />
+          </Animated.View>
+        );
       }}
     >
       <Tabs.Screen

@@ -12,6 +12,8 @@ import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -193,7 +195,11 @@ export default function Regiter() {
         }}
       />
 
-      <View className="flex-1 px-6">
+      <KeyboardAvoidingView
+        className="flex-1 px-6"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+      >
         <View className="flex-row justify-between items-center mt-4">
           <TouchableOpacity activeOpacity={0.7} onPress={handleBack}>
             <Octicons name="arrow-left" size={24} color="black" />
@@ -209,7 +215,7 @@ export default function Regiter() {
           className="flex-1 py-4 gap-4 mt-4"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            paddingBottom: 60,
+            paddingBottom: 10,
           }}
         >
           <Text className="text-lg font-medium mb-2">Select Alert Type</Text>
@@ -384,7 +390,7 @@ export default function Regiter() {
             </View>
           </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
