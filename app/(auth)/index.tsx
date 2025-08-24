@@ -5,7 +5,7 @@ import { findUserByEmail } from "@/database/database";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import { useForm } from "react-hook-form";
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
@@ -19,7 +19,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const router = useRouter();
   const { signIn } = useAuth();
 
   const {
@@ -46,8 +45,6 @@ export default function Login() {
           text1: "Login successful",
           text2: `Welcome, ${user.fullName}`,
         });
-
-        router.push("/(tabs)");
       } else {
         Toast.show({
           type: "error",

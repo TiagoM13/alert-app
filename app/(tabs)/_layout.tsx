@@ -1,19 +1,13 @@
 import { FloatingButton } from "@/components/floating-button";
 import { Theme } from "@/constants";
-import { useAuth } from "@/context/auth";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Redirect, Tabs, usePathname } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Animated, View } from "react-native";
 
 export default function TabLayout() {
-  const { isAuthenticated } = useAuth();
   const pathname = usePathname();
-
-  if (!isAuthenticated) {
-    return <Redirect href={"/(auth)"} />;
-  }
 
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;

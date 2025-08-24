@@ -11,7 +11,8 @@ interface User {
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
+  isAuthenticated: boolean | null;
+  isLoading: boolean;
   user: User | null;
   signIn: (userId: string, userData: User) => Promise<void>;
   signOut: () => Promise<void>;
@@ -20,7 +21,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
+  isAuthenticated: null,
+  isLoading: true,
   user: null,
   signIn: async () => {},
   signOut: async () => {},
@@ -31,7 +33,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -84,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsAuthenticated(false);
           setUser(null);
         }
+      } else {
+        setIsAuthenticated(false);
       }
       setIsLoading(false);
     };
@@ -98,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         isAuthenticated,
+        isLoading,
         user,
         signIn,
         signOut,

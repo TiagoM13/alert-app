@@ -131,7 +131,6 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   const statusStyles = getStatusStyles(alert.status);
 
   return (
-    // Usa FadeInDown para a animação de entrada, que é mais robusta
     <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
       <Animated.View
         style={[

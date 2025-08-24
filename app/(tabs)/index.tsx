@@ -45,8 +45,6 @@ export default function Home() {
     router.push({ pathname: "/register", params: { id: alertId } });
   };
 
-  console.log({ isLoading });
-
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
