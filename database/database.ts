@@ -18,17 +18,21 @@ export const initDatabase = async () => {
     await database.execAsync(
       `CREATE TABLE IF NOT EXISTS alerts (
         id TEXT PRIMARY KEY NOT NULL,
+        userId TEXT NOT NULL,
         title TEXT NOT NULL,
         message TEXT NOT NULL,
         type TEXT NOT NULL,
+        priority TEXT NOT NULL,
         location TEXT,
+        scheduledAt TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY NOT NULL,
         fullName TEXT NOT NULL,
-        email TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
         phoneNumber TEXT,
         location TEXT,
         password TEXT NOT NULL
@@ -48,13 +52,17 @@ export const insertAlert = async (alert: Alert) => {
   try {
     const database = await getDb();
     const result = await database.runAsync(
-      `INSERT INTO alerts (id, title, message, type, location, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO alerts (id, userId, title, message, type, priority, location, scheduledAt, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         alert.id,
+        alert.userId,
         alert.title,
         alert.message,
         alert.type,
+        alert.priority,
         alert.location || "",
+        alert.scheduledAt || null,
+        alert.status,
         alert.createdAt,
         alert.updatedAt,
       ]
@@ -128,11 +136,14 @@ export const updateAlert = async (alert: Alert) => {
   try {
     const database = await getDb();
     const result = await database.runAsync(
-      `UPDATE alerts SET title = ?, message = ?, type = ?, updatedAt = ?, location = ? WHERE id = ?;`,
+      `UPDATE alerts SET title = ?, message = ?, type = ?, priority = ?, scheduledAt = ?, status = ?, updatedAt = ?, location = ? WHERE id = ?;`,
       [
         alert.title,
         alert.message,
         alert.type,
+        alert.priority,
+        alert.scheduledAt || null,
+        alert.status,
         alert.updatedAt,
         alert.location || "",
         alert.id,

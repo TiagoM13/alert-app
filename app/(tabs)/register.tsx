@@ -1,8 +1,9 @@
 import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
 import { SelectType } from "@/components/_ui/SelectType";
-import { Alert, AlertType } from "@/components/alerts/types";
+import { Alert, AlertPriority, AlertType } from "@/components/alerts/types";
 import { Theme } from "@/constants";
+import { useAuth } from "@/context/auth";
 import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -62,6 +63,7 @@ const priorityOptions = [
 export default function Regiter() {
   const { id } = useLocalSearchParams();
   const isEditing = !!id;
+  const { user } = useAuth();
 
   const [loadingAlert, setLoadingAlert] = useState(isEditing);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -111,21 +113,27 @@ export default function Regiter() {
   console.log({ errors });
 
   const onSubmit = async (data: AlertFormData) => {
+    if (!user) {
+      console.error("Erro: Usuário não está logado.");
+      return;
+    }
+
     try {
       if (isEditing && typeof id === "string") {
         const updatedAlert: Alert = {
           id: id,
+          userId: user.id,
           title: data.title,
           message: data.description,
           type: data.alertType as AlertType,
+          priority: data.priority as AlertPriority,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           location: data.location || "",
-          priority: data.priority,
-          scheduledAt:
-            isScheduled && data.scheduledDate && data.scheduledTime
-              ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
-              : undefined,
+          scheduledAt: isScheduled
+            ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
+            : undefined,
+          status: "pending",
         };
         await updateAlert(updatedAlert);
         console.log("Alerta atualizado no banco de dados:", updatedAlert);
@@ -134,17 +142,18 @@ export default function Regiter() {
       } else {
         const newAlert: Alert = {
           id: uuidv4(),
+          userId: user.id,
           title: data.title,
           message: data.description,
           type: data.alertType as AlertType,
+          priority: data.priority as AlertPriority,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           location: data.location || "",
-          priority: data.priority,
-          scheduledAt:
-            isScheduled && data.scheduledDate && data.scheduledTime
-              ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
-              : undefined,
+          scheduledAt: isScheduled
+            ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
+            : undefined,
+          status: "pending",
         };
         await insertAlert(newAlert);
         console.log("Alerta salvo no banco de dados:", newAlert);
@@ -169,13 +178,27 @@ export default function Regiter() {
         setTimeout(async () => {
           try {
             const existingAlert = await fetchAlertById(id);
+
+            console.log({ existingAlert });
             if (existingAlert) {
               setValue("alertType", existingAlert.type);
               setValue("title", existingAlert.title);
               setValue("description", existingAlert.message);
               setValue("location", existingAlert.location || "");
-              setValue("priority", existingAlert.priority || "Low");
-              setIsScheduled(!!existingAlert.scheduledAt);
+              setValue("priority", existingAlert.priority);
+              if (existingAlert.scheduledAt) {
+                setIsScheduled(true);
+                const scheduledDateString = existingAlert.scheduledAt.substring(
+                  0,
+                  10
+                );
+                const scheduledTimeString = existingAlert.scheduledAt.substring(
+                  11,
+                  16
+                );
+                setValue("scheduledDate", scheduledDateString);
+                setValue("scheduledTime", scheduledTimeString);
+              }
             } else {
               console.warn("Alerta não encontrado para edição:", id);
               router.replace("/(tabs)");
@@ -373,7 +396,7 @@ export default function Regiter() {
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isDatePickerVisible}
-                    date={scheduledDate ? parseISO(scheduledDate) : new Date()}
+                    date={scheduledDate ? new Date(scheduledDate) : new Date()}
                     mode="date"
                     onConfirm={handleConfirmDate}
                     onCancel={hideDatePicker}
@@ -397,7 +420,7 @@ export default function Regiter() {
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isTimePickerVisible}
-                    date={scheduledTime ? parseISO(scheduledTime) : new Date()}
+                    date={scheduledDate ? new Date(scheduledDate) : new Date()}
                     mode="time"
                     onConfirm={handleConfirmTime}
                     onCancel={hideTimePicker}
