@@ -8,4 +8,6 @@ export interface Alert {
   type: AlertType;
   createdAt: string;
   updatedAt: string;
+  priority: "Low" | "Medium" | "High";
+  scheduledAt?: string;
 }

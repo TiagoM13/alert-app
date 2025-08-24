@@ -1,5 +1,6 @@
 import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
+import { SelectType } from "@/components/_ui/SelectType";
 import { Alert, AlertType } from "@/components/alerts/types";
 import { Theme } from "@/constants";
 import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
@@ -7,6 +8,8 @@ import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -19,8 +22,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { twMerge } from "tailwind-merge";
+import Switch from "react-native-switch-toggle";
+
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
@@ -36,27 +41,11 @@ const alertSchema = z.object({
     .max(500, "Descrição muito longa"),
   location: z.string().optional(),
   priority: z.enum(["Low", "Medium", "High"]),
+  scheduledDate: z.string().optional(),
+  scheduledTime: z.string().optional(),
 });
 
-type AlertFormData = z.infer<typeof alertSchema>;
-
-const buttons = [
-  {
-    label: "Emergency",
-  },
-  {
-    label: "Warning",
-  },
-  {
-    label: "Information",
-  },
-];
-
-const colors: Record<string, string> = {
-  Emergency: Theme.colors.alert,
-  Warning: Theme.colors.warning,
-  Information: Theme.colors.success,
-};
+export type AlertFormData = z.infer<typeof alertSchema>;
 
 const priorityOptions = [
   {
@@ -70,26 +59,21 @@ const priorityOptions = [
   },
 ];
 
-// const defaultValues = {
-//   alertType: "Emergency",
-//   title: "",
-//   description: "",
-//   location: "",
-//   priority: "Low",
-// };
 export default function Regiter() {
   const { id } = useLocalSearchParams();
   const isEditing = !!id;
 
-  console.log({ id });
-
   const [loadingAlert, setLoadingAlert] = useState(isEditing);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
+  const [isScheduled, setIsScheduled] = useState(false);
 
   const {
     control,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<AlertFormData>({
     resolver: zodResolver(alertSchema),
@@ -99,8 +83,30 @@ export default function Regiter() {
       description: "",
       location: "",
       priority: "Low",
+      scheduledDate: "",
+      scheduledTime: "",
     },
   });
+
+  const scheduledDate = watch("scheduledDate");
+  const scheduledTime = watch("scheduledTime");
+
+  const showDatePicker = () => setDatePickerVisibility(true);
+  const hideDatePicker = () => setDatePickerVisibility(false);
+  const handleConfirmDate = (date: Date) => {
+    setValue("scheduledDate", format(date, "yyyy-MM-dd"));
+    hideDatePicker();
+  };
+
+  const showTimePicker = () => setTimePickerVisibility(true);
+  const hideTimePicker = () => setTimePickerVisibility(false);
+  const handleConfirmTime = (time: Date) => {
+    setValue("scheduledTime", format(time, "HH:mm"));
+    hideTimePicker();
+  };
+
+  console.log(scheduledDate);
+  console.log(scheduledTime);
 
   console.log({ errors });
 
@@ -115,6 +121,11 @@ export default function Regiter() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           location: data.location || "",
+          priority: data.priority,
+          scheduledAt:
+            isScheduled && data.scheduledDate && data.scheduledTime
+              ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
+              : undefined,
         };
         await updateAlert(updatedAlert);
         console.log("Alerta atualizado no banco de dados:", updatedAlert);
@@ -129,6 +140,11 @@ export default function Regiter() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           location: data.location || "",
+          priority: data.priority,
+          scheduledAt:
+            isScheduled && data.scheduledDate && data.scheduledTime
+              ? `${data.scheduledDate}T${data.scheduledTime}:00Z`
+              : undefined,
         };
         await insertAlert(newAlert);
         console.log("Alerta salvo no banco de dados:", newAlert);
@@ -158,7 +174,8 @@ export default function Regiter() {
               setValue("title", existingAlert.title);
               setValue("description", existingAlert.message);
               setValue("location", existingAlert.location || "");
-              // Exemplo: setValue("priority", existingAlert.priority || "Low");
+              setValue("priority", existingAlert.priority || "Low");
+              setIsScheduled(!!existingAlert.scheduledAt);
             } else {
               console.warn("Alerta não encontrado para edição:", id);
               router.replace("/(tabs)");
@@ -194,7 +211,6 @@ export default function Regiter() {
           headerShown: false,
         }}
       />
-
       <KeyboardAvoidingView
         className="flex-1 px-6"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -206,7 +222,7 @@ export default function Regiter() {
           </TouchableOpacity>
 
           <Text className="text-black text-[24px] font-semibold">
-            Add Alert
+            {isEditing ? "Edit Alert" : "Add Alert"}
           </Text>
           <Text className="text-2xl text-center"></Text>
         </View>
@@ -218,63 +234,7 @@ export default function Regiter() {
             paddingBottom: 10,
           }}
         >
-          <Text className="text-lg font-medium mb-2">Select Alert Type</Text>
-
-          {/* Alert Type Selection */}
-          <Controller
-            control={control}
-            name="alertType"
-            render={({ field: { onChange, value } }) => (
-              <View className="gap-2">
-                {buttons.map((button) => (
-                  <TouchableOpacity
-                    key={button.label}
-                    activeOpacity={0.7}
-                    className={twMerge(
-                      "flex-row items-center gap-2 border-2 rounded-xl p-4"
-                    )}
-                    style={{
-                      borderColor:
-                        value === button.label
-                          ? colors[button.label]
-                          : "#e5e7eb",
-                    }}
-                    onPress={() => onChange(button.label)}
-                  >
-                    <View
-                      style={{
-                        borderColor: colors[button.label],
-                      }}
-                      className={twMerge("w-8 h-8 border-2 p-1 rounded-full")}
-                    >
-                      <View
-                        className="w-full h-full rounded-full"
-                        style={{
-                          backgroundColor:
-                            value === button.label
-                              ? colors[button.label]
-                              : "transparent",
-                        }}
-                      />
-                    </View>
-                    <Text
-                      style={{
-                        color: colors[button.label],
-                      }}
-                      className={twMerge("text-lg font-medium")}
-                    >
-                      {button.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          />
-          {errors.alertType && (
-            <Text className="text-red-500 text-sm mt-1">
-              {errors.alertType.message}
-            </Text>
-          )}
+          <SelectType name="alertType" control={control} />
 
           <View className="gap-2 space-y-4 mt-6">
             {/* Title Input */}
@@ -364,6 +324,88 @@ export default function Regiter() {
                 </Text>
               )}
             </View>
+
+            {/* 2. Toggle "Schedule Alert" */}
+            <View className="flex-row items-center justify-between mt-6">
+              <Text className="text-lg font-medium">Schedule Alert</Text>
+              <Switch
+                switchOn={isScheduled}
+                onPress={() => setIsScheduled(!isScheduled)}
+                circleColorOff={Theme.colors.white}
+                circleColorOn={Theme.colors.white}
+                backgroundColorOff={Theme.colors.cardBackground}
+                backgroundColorOn={Theme.colors.primary}
+                containerStyle={{
+                  width: 50,
+                  height: 28,
+                  borderRadius: 25,
+                  padding: 2,
+                }}
+                circleStyle={{
+                  width: 25,
+                  height: 25,
+                  borderRadius: 25,
+                }}
+              />
+            </View>
+
+            {/* 3. Inputs de Data e Hora Condicionais */}
+            {isScheduled && (
+              <View className="gap-4 mt-4">
+                <View className="flex-1">
+                  <Text className="text-lg font-medium">Date</Text>
+                  <TouchableOpacity
+                    onPress={showDatePicker}
+                    className="flex-row items-center p-4 border rounded-xl border-gray-200 mt-2"
+                  >
+                    <Text className="flex-1 text-lg text-gray-800">
+                      {scheduledDate
+                        ? format(parseISO(scheduledDate), "dd/MM/yyyy", {
+                            locale: ptBR,
+                          })
+                        : "dd/mm/yyyy"}
+                    </Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color={Theme.colors.textLabel}
+                    />
+                  </TouchableOpacity>
+                  <DateTimePickerModal
+                    isVisible={isDatePickerVisible}
+                    date={scheduledDate ? parseISO(scheduledDate) : new Date()}
+                    mode="date"
+                    onConfirm={handleConfirmDate}
+                    onCancel={hideDatePicker}
+                  />
+                </View>
+
+                <View className="flex-1">
+                  <Text className="text-lg font-medium">Time</Text>
+                  <TouchableOpacity
+                    onPress={showTimePicker}
+                    className="flex-row items-center p-4 border rounded-xl border-gray-200 mt-2"
+                  >
+                    <Text className="flex-1 text-lg">
+                      {scheduledTime || "--:--"}
+                    </Text>
+                    <Ionicons
+                      name="time-outline"
+                      size={20}
+                      color={Theme.colors.textLabel}
+                    />
+                  </TouchableOpacity>
+                  <DateTimePickerModal
+                    isVisible={isTimePickerVisible}
+                    date={scheduledTime ? parseISO(scheduledTime) : new Date()}
+                    mode="time"
+                    onConfirm={handleConfirmTime}
+                    onCancel={hideTimePicker}
+                    is24Hour
+                  />
+                </View>
+              </View>
+            )}
 
             {/* Action Buttons */}
             <View className="flex-row items-center justify-between gap-2 mt-10 mb-10">
