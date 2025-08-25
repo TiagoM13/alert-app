@@ -3,12 +3,11 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { AuthProvider, useAuth } from "@/context/auth";
-import { router, Stack } from "expo-router";
+import { AuthProvider } from "@/context/auth";
+import { SplashScreen, Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import "react-native-get-random-values";
 import "react-native-reanimated";
@@ -24,8 +23,9 @@ configureReanimatedLogger({
   strict: false,
 });
 
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
-  const theme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -34,47 +34,34 @@ export default function RootLayout() {
     initDatabase();
   }, []);
 
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hide();
+    }
+  }, [loaded]);
+
   if (!loaded) return null;
 
   return (
     <GestureHandlerRootView>
       <ThemeProvider value={DefaultTheme}>
-        <StatusBar translucent style={theme === "dark" ? "light" : "dark"} />
+        <StatusBar translucent backgroundColor="transparent" style={"dark"} />
         <SQLiteProvider databaseName="alerts.db">
           <SafeAreaProvider>
             <AuthProvider>
-              <AppStack />
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="+not-found"
+                  options={{ headerShown: false }}
+                />
+              </Stack>
             </AuthProvider>
             <Toast />
           </SafeAreaProvider>
         </SQLiteProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
-  );
-}
-
-function AppStack() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (isAuthenticated) {
-      router.replace("/(tabs)");
-    } else {
-      router.replace("/(auth)");
-    }
-  }, [isAuthenticated, isLoading]);
-
-  if (isLoading || isAuthenticated === null) {
-    return null;
-  }
-
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="+not-found" />
-    </Stack>
   );
 }

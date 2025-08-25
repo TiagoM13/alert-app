@@ -1,13 +1,21 @@
 import { FloatingButton } from "@/components/floating-button";
 import { Theme } from "@/constants";
+import { useAuth } from "@/context/auth";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Tabs, usePathname } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import {
+  router,
+  SplashScreen,
+  Tabs,
+  useFocusEffect,
+  usePathname,
+} from "expo-router";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Animated, View } from "react-native";
 
 export default function TabLayout() {
   const pathname = usePathname();
+  const { isAuthenticated, isLoading } = useAuth();
 
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
@@ -28,6 +36,28 @@ export default function TabLayout() {
       }),
     ]).start();
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated && !isLoading) {
+        router.replace("/(auth)");
+      }
+    }, [isAuthenticated, isLoading])
+  );
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <Tabs

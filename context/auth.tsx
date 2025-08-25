@@ -1,6 +1,12 @@
 import { findUserById } from "@/database/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface User {
   id: string;
@@ -55,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(userData);
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const userSessionId = await AsyncStorage.getItem("userSessionId");
     if (userSessionId) {
       try {
@@ -68,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Erro ao atualizar dados do usuário:", error);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const checkAuthStatus = async () => {

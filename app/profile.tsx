@@ -30,7 +30,7 @@ export default function Profile() {
         style: "destructive",
         onPress: async () => {
           await signOut();
-          // router.replace("/(auth)");
+          router.replace("/(auth)");
         },
       },
     ]);
