@@ -11,7 +11,7 @@ interface AlertListProps {
   alerts: Alert[];
   isLoading?: boolean;
   onAlertPress?: (id: string) => void;
-  onAlertDeleted?: () => void;
+  onAlertDeleted?: (id: string) => void;
 }
 
 export function AlertList({
@@ -42,9 +42,9 @@ export function AlertList({
         await deleteAlert(alertToDelete);
         setModalVisible(false);
         setAlertToDelete(null);
-        setSwipedItemId(null); // Limpa o ID para fechar o arraste
+        setSwipedItemId(null);
         if (onAlertDeleted) {
-          onAlertDeleted();
+          onAlertDeleted(alertToDelete);
         }
       } catch (error) {
         console.error("Erro ao deletar o alerta:", error);

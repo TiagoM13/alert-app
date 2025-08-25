@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 import { Alert } from "@/components/alerts/types";
+import { useAuth } from "@/context/auth";
 import { fetchAlerts } from "@/database/database";
 import { useFocusEffect } from "@react-navigation/native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -41,27 +42,26 @@ export default function History() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = React.useState<Tabs>(Tabs.All);
   const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
+  const { user } = useAuth();
 
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
     setIsLoading(true);
-
-    setTimeout(async () => {
-      try {
-        const data = await fetchAlerts();
-        setAllAlerts(data);
-      } catch (error) {
-        console.error("Erro ao carregar alertas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 2000);
-  };
+    try {
+      if (!user) return;
+      const data = await fetchAlerts(user.id);
+      setAllAlerts(data);
+    } catch (error) {
+      console.error("Erro ao carregar alertas:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
       loadAlerts();
       return () => {};
-    }, [])
+    }, [loadAlerts])
   );
 
   const filteredAlerts = useMemo(() => {
@@ -85,6 +85,12 @@ export default function History() {
 
   const handleAlertPress = (alertId: string) => {
     router.push({ pathname: "/register", params: { id: alertId } });
+  };
+
+  const handleAlertDeleted = (deletedId: string) => {
+    setAllAlerts((prevAlerts) =>
+      prevAlerts.filter((alert) => alert.id !== deletedId)
+    );
   };
 
   return (
@@ -133,7 +139,7 @@ export default function History() {
           alerts={filteredAlerts}
           isLoading={isLoading}
           onAlertPress={handleAlertPress}
-          onAlertDeleted={loadAlerts}
+          onAlertDeleted={handleAlertDeleted}
         />
       </View>
     </SafeAreaView>

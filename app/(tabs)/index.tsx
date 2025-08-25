@@ -13,27 +13,24 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentAlerts, setCurrentAlerts] = useState<Alert[]>([]);
 
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
     setIsLoading(true);
-
-    setTimeout(async () => {
-      try {
-        if (!user) return;
-        const data = await fetchAlerts(user.id);
-        setCurrentAlerts(data);
-      } catch (error) {
-        console.error("Erro ao carregar alertas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 2000);
-  };
+    try {
+      if (!user) return;
+      const data = await fetchAlerts(user.id);
+      setCurrentAlerts(data);
+    } catch (error) {
+      console.error("Erro ao carregar alertas:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
       loadAlerts();
       return () => {};
-    }, [])
+    }, [loadAlerts])
   );
 
   const handleBellPress = () => {
@@ -46,6 +43,12 @@ export default function Home() {
 
   const handleAlertPress = (alertId: string) => {
     router.push({ pathname: "/register", params: { id: alertId } });
+  };
+
+  const handleAlertDeleted = (deletedId: string) => {
+    setCurrentAlerts((prevAlerts) =>
+      prevAlerts.filter((alert) => alert.id !== deletedId)
+    );
   };
 
   return (
@@ -61,7 +64,7 @@ export default function Home() {
           alerts={currentAlerts}
           onAlertPress={handleAlertPress}
           isLoading={isLoading}
-          onAlertDeleted={loadAlerts}
+          onAlertDeleted={handleAlertDeleted}
         />
       </View>
     </SafeAreaView>

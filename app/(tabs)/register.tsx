@@ -2,12 +2,12 @@ import { InputText } from "@/components/_ui/InputText";
 import { InputTextarea } from "@/components/_ui/InputTextarea";
 import { SelectType } from "@/components/_ui/SelectType";
 import { Alert, AlertPriority, AlertType } from "@/components/alerts/types";
+import { BackButton } from "@/components/back-button";
 import { Theme } from "@/constants";
 import { useAuth } from "@/context/auth";
 import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Octicons from "@expo/vector-icons/Octicons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -175,41 +175,39 @@ export default function Regiter() {
       if (isEditing && typeof id === "string") {
         setLoadingAlert(true);
 
-        setTimeout(async () => {
-          try {
-            const existingAlert = await fetchAlertById(id);
+        try {
+          const existingAlert = await fetchAlertById(id);
 
-            console.log({ existingAlert });
-            if (existingAlert) {
-              setValue("alertType", existingAlert.type);
-              setValue("title", existingAlert.title);
-              setValue("description", existingAlert.message);
-              setValue("location", existingAlert.location || "");
-              setValue("priority", existingAlert.priority);
-              if (existingAlert.scheduledAt) {
-                setIsScheduled(true);
-                const scheduledDateString = existingAlert.scheduledAt.substring(
-                  0,
-                  10
-                );
-                const scheduledTimeString = existingAlert.scheduledAt.substring(
-                  11,
-                  16
-                );
-                setValue("scheduledDate", scheduledDateString);
-                setValue("scheduledTime", scheduledTimeString);
-              }
-            } else {
-              console.warn("Alerta não encontrado para edição:", id);
-              router.replace("/(tabs)");
+          console.log({ existingAlert });
+          if (existingAlert) {
+            setValue("alertType", existingAlert.type);
+            setValue("title", existingAlert.title);
+            setValue("description", existingAlert.message);
+            setValue("location", existingAlert.location || "");
+            setValue("priority", existingAlert.priority);
+            if (existingAlert.scheduledAt) {
+              setIsScheduled(true);
+              const scheduledDateString = existingAlert.scheduledAt.substring(
+                0,
+                10
+              );
+              const scheduledTimeString = existingAlert.scheduledAt.substring(
+                11,
+                16
+              );
+              setValue("scheduledDate", scheduledDateString);
+              setValue("scheduledTime", scheduledTimeString);
             }
-          } catch (error) {
-            console.error("Erro ao carregar alerta para edição:", error);
+          } else {
+            console.warn("Alerta não encontrado para edição:", id);
             router.replace("/(tabs)");
-          } finally {
-            setLoadingAlert(false);
           }
-        }, 2000);
+        } catch (error) {
+          console.error("Erro ao carregar alerta para edição:", error);
+          router.replace("/(tabs)");
+        } finally {
+          setLoadingAlert(false);
+        }
       } else {
         setLoadingAlert(false);
       }
@@ -240,9 +238,7 @@ export default function Regiter() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <View className="flex-row justify-between items-center mt-4">
-          <TouchableOpacity activeOpacity={0.7} onPress={handleBack}>
-            <Octicons name="arrow-left" size={24} color="black" />
-          </TouchableOpacity>
+          <BackButton onBackFn={() => reset()} />
 
           <Text className="text-black text-[24px] font-semibold">
             {isEditing ? "Edit Alert" : "Add Alert"}

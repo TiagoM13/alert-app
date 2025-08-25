@@ -3,21 +3,17 @@ import { Theme } from "@/constants";
 import { useAuth } from "@/context/auth";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import Octicons from "@expo/vector-icons/Octicons";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { BackButton } from "@/components/back-button";
 import { version } from "../package.json";
 
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuth();
-
-  const handleBack = () => {
-    router.back();
-  };
 
   const handleSignOut = async () => {
     Alert.alert("Sair", "Tem certeza que deseja sair?", [
@@ -53,9 +49,7 @@ export default function Profile() {
       />
       {/* Header */}
       <View className="flex-row justify-between items-center py-4 px-6 border-b border-cardBackground">
-        <TouchableOpacity activeOpacity={0.7} onPress={handleBack}>
-          <Octicons name="arrow-left" size={24} color="black" />
-        </TouchableOpacity>
+        <BackButton />
 
         <Text className="text-black text-[24px] font-semibold">Profile</Text>
         <Text className="text-2xl text-center"></Text>
