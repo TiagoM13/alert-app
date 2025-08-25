@@ -1,6 +1,7 @@
 import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
 import { Alert } from "@/components/alerts/types";
+import { useAuth } from "@/context/auth";
 import { fetchAlerts } from "@/database/database";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -8,6 +9,7 @@ import React, { useCallback, useState } from "react";
 import { SafeAreaView, View } from "react-native";
 
 export default function Home() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [currentAlerts, setCurrentAlerts] = useState<Alert[]>([]);
 
@@ -16,7 +18,8 @@ export default function Home() {
 
     setTimeout(async () => {
       try {
-        const data = await fetchAlerts();
+        if (!user) return;
+        const data = await fetchAlerts(user.id);
         setCurrentAlerts(data);
       } catch (error) {
         console.error("Erro ao carregar alertas:", error);

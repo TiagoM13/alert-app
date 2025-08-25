@@ -80,13 +80,14 @@ export const insertAlert = async (alert: Alert) => {
 };
 
 // Função para buscar todos os alertas
-export const fetchAlerts = async (): Promise<Alert[]> => {
+export const fetchAlerts = async (userId: string): Promise<Alert[]> => {
   try {
     const database = await getDb();
     const allRows = await database.getAllAsync<Alert>(
-      `SELECT * FROM alerts ORDER BY createdAt DESC;`
+      `SELECT * FROM alerts WHERE userId = ? ORDER BY createdAt DESC;`,
+      [userId]
     );
-    console.log("Alertas buscados com sucesso.");
+    console.log("Alertas buscados com sucesso para o usuário:", userId);
     return allRows;
   } catch (error) {
     console.error("Erro ao buscar alertas:", error);
