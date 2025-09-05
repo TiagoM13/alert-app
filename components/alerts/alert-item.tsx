@@ -28,6 +28,7 @@ interface AlertItemProps {
   alert: Alert;
   onPress?: (id: string) => void;
   onDeleteRequest?: (id: string) => void;
+  onCompleteRequest: (id: string) => void;
   index?: number;
   resetSwipe?: boolean;
 }
@@ -35,6 +36,7 @@ interface AlertItemProps {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3; // Define o limite de arraste para a ação de exclusão
 const SWIPE_VELOCITY_THRESHOLD = 500; // Limiar de velocidade para o arraste ser considerado forte
+const HORIZONTAL_PADDING = 16;
 
 const getColorByType = (type: Alert["type"]) => {
   switch (type) {
@@ -65,6 +67,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   alert,
   onPress,
   onDeleteRequest,
+  onCompleteRequest,
   index = 0,
   resetSwipe = false,
 }) => {
@@ -79,6 +82,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   const animatedItemStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
+      // marginHorizontal: HORIZONTAL_PADDING,
     };
   });
 
@@ -93,31 +97,46 @@ export const AlertItem: React.FC<AlertItemProps> = ({
 
     return {
       opacity: opacity,
+      right: -HORIZONTAL_PADDING,
+    };
+  });
+
+  const animatedCompleteButtonStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity: opacity,
+      left: -HORIZONTAL_PADDING,
     };
   });
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
-      // Permite o arraste apenas para a esquerda
-      if (event.translationX < 0) {
-        translateX.value = event.translationX;
-      }
+      // Permite o arraste em ambas as direções
+      translateX.value = event.translationX;
     })
     .onEnd((event) => {
-      // Se o arraste exceder o limite OU a velocidade for alta, dispara a exclusão
       const shouldDelete =
         translateX.value < -SWIPE_THRESHOLD ||
         event.velocityX < -SWIPE_VELOCITY_THRESHOLD;
 
-      if (shouldDelete) {
-        // Anima o item para fora da tela e, em seguida, abre o modal
+      const shouldComplete =
+        translateX.value > SWIPE_THRESHOLD ||
+        event.velocityX > SWIPE_VELOCITY_THRESHOLD;
+
+      if (shouldDelete && onDeleteRequest) {
         translateX.value = withTiming(-SCREEN_WIDTH, {}, () => {
-          if (onDeleteRequest) {
-            runOnJS(onDeleteRequest)(alert.id);
-          }
+          runOnJS(onDeleteRequest)(alert.id);
+        });
+      } else if (shouldComplete) {
+        translateX.value = withTiming(SCREEN_WIDTH, {}, () => {
+          runOnJS(onCompleteRequest)(alert.id);
         });
       } else {
-        // Retorna o item à sua posição original com animação de mola
         translateX.value = withSpring(0);
       }
     });
@@ -141,6 +160,16 @@ export const AlertItem: React.FC<AlertItemProps> = ({
       >
         <MaterialIcons name="delete" size={24} color="white" />
         <Text style={styles.deleteButtonText}>Delete</Text>
+      </Animated.View>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          styles.completeButtonBackground,
+          animatedCompleteButtonStyle,
+        ]}
+      >
+        <MaterialIcons name="done" size={24} color="white" />
+        <Text style={styles.completeButtonText}>Complete</Text>
       </Animated.View>
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[animatedItemStyle]}>
@@ -239,10 +268,23 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingHorizontal: 20,
   },
+  completeButtonBackground: {
+    backgroundColor: Theme.colors.success,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingHorizontal: 20,
+  },
   touchable: {
     padding: 0,
   },
   deleteButtonText: {
+    color: "white",
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  completeButtonText: {
     color: "white",
     fontWeight: "600",
     marginLeft: 8,

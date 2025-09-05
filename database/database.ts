@@ -162,6 +162,24 @@ export const updateAlert = async (alert: Alert) => {
   }
 };
 
+// Função para atualizar o status de um alerta
+export const updateAlertStatus = async (id: string, newStatus: string) => {
+  try {
+    const database = await getDb();
+    const result = await database.runAsync(
+      `UPDATE alerts SET status = ?, updatedAt = ? WHERE id = ?;`,
+      [newStatus, new Date().toISOString(), id]
+    );
+    console.log(
+      `Status do alerta ${id} atualizado para ${newStatus}. Changes:`,
+      result.changes
+    );
+  } catch (error) {
+    console.error("Erro ao atualizar o status do alerta:", error);
+    throw error;
+  }
+};
+
 interface User {
   id: string;
   fullName: string;

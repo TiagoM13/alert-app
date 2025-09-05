@@ -2,8 +2,9 @@ import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
 import { Alert } from "@/components/alerts/types";
 import { useAuth } from "@/context/auth";
-import { fetchAlerts } from "@/database/database";
+import { fetchAlerts, updateAlertStatus } from "@/database/database";
 import { useFocusEffect } from "@react-navigation/native";
+import { isAfter } from "date-fns";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { SafeAreaView, View } from "react-native";
@@ -17,7 +18,22 @@ export default function Home() {
     setIsLoading(true);
     try {
       if (!user) return;
-      const data = await fetchAlerts(user.id);
+      let data = await fetchAlerts(user.id);
+
+      const overdueUpdates = data.filter(
+        (alert) =>
+          alert.scheduledAt &&
+          alert.status === "pending" &&
+          isAfter(new Date(), alert.scheduledAt)
+      );
+
+      if (overdueUpdates.length > 0) {
+        await Promise.all(
+          overdueUpdates.map((alert) => updateAlertStatus(alert.id, "overdue"))
+        );
+        data = await fetchAlerts(user.id);
+      }
+
       setCurrentAlerts(data);
     } catch (error) {
       console.error("Erro ao carregar alertas:", error);
@@ -51,6 +67,17 @@ export default function Home() {
     );
   };
 
+  const handleAlertCompleted = (completedId: string) => {
+    setCurrentAlerts((prevAlerts) => {
+      // Atualiza o status do alerta no estado local
+      const newAlerts = prevAlerts.map((alert) =>
+        alert.id === completedId ? { ...alert, status: "completed" } : alert
+      );
+      // Filtra os alertas "concluídos" para que não apareçam mais na lista principal
+      return newAlerts as Alert[];
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Header
@@ -59,12 +86,13 @@ export default function Home() {
         onUserAvatarPress={handleUserAvatarPress}
       />
 
-      <View className="flex-1 relative px-6 gap-5">
+      <View className="flex-1 relative gap-5">
         <AlertList
           alerts={currentAlerts}
           onAlertPress={handleAlertPress}
           isLoading={isLoading}
           onAlertDeleted={handleAlertDeleted}
+          onAlertCompleted={handleAlertCompleted}
         />
       </View>
     </SafeAreaView>

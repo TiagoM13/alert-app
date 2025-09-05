@@ -1,5 +1,5 @@
 import { Theme } from "@/constants";
-import { deleteAlert } from "@/database/database";
+import { deleteAlert, updateAlertStatus } from "@/database/database";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
@@ -12,6 +12,7 @@ interface AlertListProps {
   isLoading?: boolean;
   onAlertPress?: (id: string) => void;
   onAlertDeleted?: (id: string) => void;
+  onAlertCompleted?: (id: string) => void;
 }
 
 export function AlertList({
@@ -19,36 +20,51 @@ export function AlertList({
   isLoading,
   onAlertPress,
   onAlertDeleted,
+  onAlertCompleted,
 }: AlertListProps) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [alertToDelete, setAlertToDelete] = useState<string | null>(null);
+  const [modalType, setModalType] = useState<"delete" | "complete">("delete");
+  const [alertToHandle, setAlertToHandle] = useState<string | null>(null);
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
 
-  const handleDeleteRequest = (id: string) => {
-    setAlertToDelete(id);
+  const handleCompleteRequest = (id: string) => {
+    setAlertToHandle(id);
+    setModalType("complete");
     setModalVisible(true);
     setSwipedItemId(id);
   };
 
-  const handleCancelDelete = () => {
+  const handleDeleteRequest = (id: string) => {
+    setAlertToHandle(id);
+    setModalType("delete");
+    setModalVisible(true);
+    setSwipedItemId(id);
+  };
+
+  const handleCancel = () => {
     setModalVisible(false);
-    setAlertToDelete(null);
+    setAlertToHandle(null);
     setSwipedItemId(null);
   };
 
-  const handleConfirmDelete = async () => {
-    if (alertToDelete) {
-      try {
-        await deleteAlert(alertToDelete);
-        setModalVisible(false);
-        setAlertToDelete(null);
-        setSwipedItemId(null);
+  const handleConfirm = async () => {
+    if (!alertToHandle) return;
+
+    try {
+      if (modalType === "delete") {
+        await deleteAlert(alertToHandle);
         if (onAlertDeleted) {
-          onAlertDeleted(alertToDelete);
+          onAlertDeleted(alertToHandle);
         }
-      } catch (error) {
-        console.error("Erro ao deletar o alerta:", error);
+      } else if (modalType === "complete") {
+        await updateAlertStatus(alertToHandle, "completed");
+        if (onAlertCompleted) {
+          onAlertCompleted(alertToHandle);
+        }
       }
+      handleCancel();
+    } catch (error) {
+      console.error(`Erro ao lidar com a ação ${modalType} do alerta:`, error);
     }
   };
 
@@ -63,10 +79,16 @@ export function AlertList({
       alert={item}
       onPress={onAlertPress}
       onDeleteRequest={handleDeleteRequest}
+      onCompleteRequest={handleCompleteRequest}
       resetSwipe={swipedItemId === item.id}
       index={index}
     />
   );
+
+  const modalMessage =
+    modalType === "delete"
+      ? "Tem certeza que deseja deletar este alerta?"
+      : "Tem certeza que deseja marcar este alerta como concluído?";
 
   return (
     <View className="flex-1">
@@ -87,15 +109,16 @@ export function AlertList({
             gap: 16,
             paddingVertical: 10,
             paddingBottom: 80,
+            paddingHorizontal: 16,
           }}
           showsVerticalScrollIndicator={false}
         />
       )}
       <ConfirmationModal
         isVisible={modalVisible}
-        message="Tem certeza que deseja deletar este alerta?"
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
+        message={modalMessage}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
       />
     </View>
   );

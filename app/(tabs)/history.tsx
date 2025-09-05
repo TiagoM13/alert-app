@@ -101,9 +101,9 @@ export default function History() {
         onUserAvatarPress={handleUserAvatarPress}
       />
 
-      <View className="flex-1 relative px-6 gap-2">
+      <View className="flex-1 relative gap-2">
         {!isLoading && (
-          <View className="py-2">
+          <View className="py-2 px-6">
             <ScrollView
               showsHorizontalScrollIndicator={false}
               horizontal
