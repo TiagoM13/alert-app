@@ -107,9 +107,6 @@ export default function Regiter() {
     hideTimePicker();
   };
 
-  console.log(scheduledDate);
-  console.log(scheduledTime);
-
   console.log({ errors });
 
   const onSubmit = async (data: AlertFormData) => {
@@ -168,6 +165,7 @@ export default function Regiter() {
   const handleBack = () => {
     router.back();
     reset();
+    setIsScheduled(false);
   };
 
   useEffect(() => {
@@ -178,7 +176,6 @@ export default function Regiter() {
         try {
           const existingAlert = await fetchAlertById(id);
 
-          console.log({ existingAlert });
           if (existingAlert) {
             setValue("alertType", existingAlert.type);
             setValue("title", existingAlert.title);
@@ -238,7 +235,12 @@ export default function Regiter() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <View className="flex-row justify-between items-center mt-4">
-          <BackButton onBackFn={() => reset()} />
+          <BackButton
+            onBackFn={() => {
+              reset();
+              setIsScheduled(false);
+            }}
+          />
 
           <Text className="text-black text-[24px] font-semibold">
             {isEditing ? "Edit Alert" : "Add Alert"}

@@ -2,7 +2,7 @@ import { Theme } from "@/constants";
 import { deleteAlert, updateAlertStatus } from "@/database/database";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import { FlatList, RefreshControl } from "react-native-gesture-handler";
 import { ConfirmationModal } from "../modal/confirmation-modal";
 import { AlertItem } from "./alert-item";
 import { Alert } from "./types";
@@ -13,6 +13,7 @@ interface AlertListProps {
   onAlertPress?: (id: string) => void;
   onAlertDeleted?: (id: string) => void;
   onAlertCompleted?: (id: string) => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export function AlertList({
@@ -21,11 +22,15 @@ export function AlertList({
   onAlertPress,
   onAlertDeleted,
   onAlertCompleted,
+  onRefresh,
 }: AlertListProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"delete" | "complete">("delete");
   const [alertToHandle, setAlertToHandle] = useState<string | null>(null);
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
+
+  // Estado para controlar o refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCompleteRequest = (id: string) => {
     setAlertToHandle(id);
@@ -65,6 +70,19 @@ export function AlertList({
       handleCancel();
     } catch (error) {
       console.error(`Erro ao lidar com a ação ${modalType} do alerta:`, error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } catch (error) {
+      console.log("Erro ao recarregar alertas", error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -112,6 +130,17 @@ export function AlertList({
             paddingHorizontal: 16,
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[Theme.colors.primary]} // Android
+              tintColor={Theme.colors.primary} // iOS
+              title="Atualizando..." // iOS
+              titleColor={Theme.colors.primary} // iOS
+              progressBackgroundColor="#ffffff" // Android
+            />
+          }
         />
       )}
       <ConfirmationModal

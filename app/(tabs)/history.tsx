@@ -45,57 +45,67 @@ export default function History() {
   const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
   const { user } = useAuth();
 
-  const loadAlerts = useCallback(async () => {
+  const fetchAndProcessAlerts = useCallback(async () => {
+    if (!user) return;
+
+    let data = await fetchAlerts(user.id);
+
+    const overdueUpdates = data.filter((alert) => {
+      if (!alert.scheduledAt || alert.status !== "pending") return false;
+
+      // Trata o scheduledAt como horário local
+      const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
+      const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
+      const scheduledAtLocalISO = format(
+        scheduledAtLocal,
+        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+      );
+
+      // Hora atual local
+      const nowLocal = new Date();
+      const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+      const isOverdue = nowLocalISO > scheduledAtLocalISO;
+
+      return isOverdue;
+    });
+
+    if (overdueUpdates.length > 0) {
+      await Promise.all(
+        overdueUpdates.map((alert) => updateAlertStatus(alert.id, "overdue"))
+      );
+      data = await fetchAlerts(user.id);
+    }
+
+    setAllAlerts(data);
+  }, [user]);
+
+  // Função para loading inicial (com loading geral)
+  const loadAlertsInitial = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (!user) return;
-      let data = await fetchAlerts(user.id);
-
-      const overdueUpdates = data.filter((alert) => {
-        if (!alert.scheduledAt || alert.status !== "pending") return false;
-
-        // Trata o scheduledAt como horário local
-        const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
-        const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
-        const scheduledAtLocalISO = format(
-          scheduledAtLocal,
-          "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-        );
-
-        // Hora atual local
-        const nowLocal = new Date();
-        const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-        console.log(`\n--- Alerta: ${alert.title} ---`);
-        console.log("Agora (local):", nowLocalISO);
-        console.log("Agendado (local):", scheduledAtLocalISO);
-
-        const isOverdue = nowLocalISO > scheduledAtLocalISO;
-        console.log("É vencido?", isOverdue);
-
-        return isOverdue;
-      });
-
-      if (overdueUpdates.length > 0) {
-        await Promise.all(
-          overdueUpdates.map((alert) => updateAlertStatus(alert.id, "overdue"))
-        );
-        data = await fetchAlerts(user.id);
-      }
-
-      setAllAlerts(data);
+      await fetchAndProcessAlerts();
     } catch (error) {
       console.error("Erro ao carregar alertas:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [fetchAndProcessAlerts]);
+
+  // Função para refresh (sem loading geral)
+  const handleRefresh = useCallback(async () => {
+    try {
+      await fetchAndProcessAlerts();
+    } catch (error) {
+      console.error("Erro ao recarregar alertas:", error);
+    }
+  }, [fetchAndProcessAlerts]);
 
   useFocusEffect(
     useCallback(() => {
-      loadAlerts();
+      loadAlertsInitial();
       return () => {};
-    }, [loadAlerts])
+    }, [loadAlertsInitial])
   );
 
   const filteredAlerts = useMemo(() => {
@@ -174,6 +184,7 @@ export default function History() {
           isLoading={isLoading}
           onAlertPress={handleAlertPress}
           onAlertDeleted={handleAlertDeleted}
+          onRefresh={handleRefresh}
         />
       </View>
     </SafeAreaView>
