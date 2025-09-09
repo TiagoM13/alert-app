@@ -1,14 +1,12 @@
 import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
 import { router } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
-import { Alert } from "@/components/alerts/types";
 import { useAuth } from "@/context/auth";
-import { fetchAlerts, updateAlertStatus } from "@/database/database";
+import { useAlerts } from "@/hooks/useAlerts";
 import { useFocusEffect } from "@react-navigation/native";
-import { format, parseISO } from "date-fns";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -17,7 +15,7 @@ enum Tabs {
   All = "All",
   Emergency = "Emergency",
   Warning = "Warning",
-  Information = "Information", // Renomeado de 'Info' para 'Information' para corresponder ao tipo AlertType
+  Information = "Information",
 }
 
 const tabs = [
@@ -40,66 +38,53 @@ const tabs = [
 ];
 
 export default function History() {
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = React.useState<Tabs>(Tabs.All);
-  const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
   const { user } = useAuth();
 
-  const fetchAndProcessAlerts = useCallback(async () => {
-    if (!user) return;
+  const {
+    alerts: historyAlerts,
+    isLoading,
+    loadAlertsInitial,
+    handleRefresh,
+  } = useAlerts(user?.id, {
+    includeCompleted: true, // Inclui alertas concluídos no histórico
+    includeOverdue: true, // Inclui alertas vencidos no histórico
+    autoUpdateOverdue: false, // Não atualiza automaticamente no histórico
+    readOnly: true,
+  });
 
-    let data = await fetchAlerts(user.id);
+  // Filtrar alertas baseado no TIPO selecionado
+  const filteredAlerts = useMemo(() => {
+    if (!historyAlerts) return [];
 
-    const overdueUpdates = data.filter((alert) => {
-      if (!alert.scheduledAt || alert.status !== "pending") return false;
-
-      // Trata o scheduledAt como horário local
-      const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
-      const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
-      const scheduledAtLocalISO = format(
-        scheduledAtLocal,
-        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-      );
-
-      // Hora atual local
-      const nowLocal = new Date();
-      const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-      const isOverdue = nowLocalISO > scheduledAtLocalISO;
-
-      return isOverdue;
-    });
-
-    if (overdueUpdates.length > 0) {
-      await Promise.all(
-        overdueUpdates.map((alert) => updateAlertStatus(alert.id, "overdue"))
-      );
-      data = await fetchAlerts(user.id);
+    switch (selectedTab) {
+      case Tabs.All:
+        return historyAlerts;
+      case Tabs.Emergency:
+        return historyAlerts.filter((alert) => alert.type === "Emergency");
+      case Tabs.Warning:
+        return historyAlerts.filter((alert) => alert.type === "Warning");
+      case Tabs.Information:
+        return historyAlerts.filter((alert) => alert.type === "Information");
+      default:
+        return historyAlerts;
     }
+  }, [historyAlerts, selectedTab]);
 
-    setAllAlerts(data);
-  }, [user]);
+  // Contar alertas por tipo para mostrar nos badges (opcional)
+  const alertCounts = useMemo(() => {
+    if (!historyAlerts)
+      return { all: 0, emergency: 0, warning: 0, information: 0 };
 
-  // Função para loading inicial (com loading geral)
-  const loadAlertsInitial = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await fetchAndProcessAlerts();
-    } catch (error) {
-      console.error("Erro ao carregar alertas:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchAndProcessAlerts]);
-
-  // Função para refresh (sem loading geral)
-  const handleRefresh = useCallback(async () => {
-    try {
-      await fetchAndProcessAlerts();
-    } catch (error) {
-      console.error("Erro ao recarregar alertas:", error);
-    }
-  }, [fetchAndProcessAlerts]);
+    return {
+      all: historyAlerts.length,
+      emergency: historyAlerts.filter((alert) => alert.type === "Emergency")
+        .length,
+      warning: historyAlerts.filter((alert) => alert.type === "Warning").length,
+      information: historyAlerts.filter((alert) => alert.type === "Information")
+        .length,
+    };
+  }, [historyAlerts]);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,13 +92,6 @@ export default function History() {
       return () => {};
     }, [loadAlertsInitial])
   );
-
-  const filteredAlerts = useMemo(() => {
-    return allAlerts.filter((alert) => {
-      if (selectedTab === Tabs.All) return true;
-      return alert.type === selectedTab;
-    });
-  }, [selectedTab, allAlerts]);
 
   const handleTabPress = (tab: Tabs) => {
     setSelectedTab(tab);
@@ -131,10 +109,20 @@ export default function History() {
     router.push({ pathname: "/register", params: { id: alertId } });
   };
 
-  const handleAlertDeleted = (deletedId: string) => {
-    setAllAlerts((prevAlerts) =>
-      prevAlerts.filter((alert) => alert.id !== deletedId)
-    );
+  // Função para obter a contagem baseada no tipo de aba
+  const getCountForTab = (tabValue: Tabs): number => {
+    switch (tabValue) {
+      case Tabs.All:
+        return alertCounts.all;
+      case Tabs.Emergency:
+        return alertCounts.emergency;
+      case Tabs.Warning:
+        return alertCounts.warning;
+      case Tabs.Information:
+        return alertCounts.information;
+      default:
+        return 0;
+    }
   };
 
   return (
@@ -156,25 +144,47 @@ export default function History() {
                 gap: 14,
               }}
             >
-              {tabs.map((tab) => (
-                <AnimatedPressable
-                  key={tab.value}
-                  onPress={() => handleTabPress(tab.value)}
-                  entering={FadeIn.duration(500)}
-                  exiting={FadeOut.duration(500)}
-                  className={`px-4 py-2 rounded-3xl justify-center items-center transition-all duration-500 ease-in-out ${
-                    selectedTab === tab.value ? "bg-primary" : "bg-gray-100"
-                  }`}
-                >
-                  <Text
-                    className={`text-base font-medium ${
-                      selectedTab === tab.value ? "text-white" : "text-gray-800"
+              {tabs.map((tab) => {
+                const count = getCountForTab(tab.value);
+
+                return (
+                  <AnimatedPressable
+                    key={tab.value}
+                    onPress={() => handleTabPress(tab.value)}
+                    entering={FadeIn.duration(500)}
+                    exiting={FadeOut.duration(500)}
+                    className={`px-4 py-2 rounded-3xl justify-center items-center transition-all duration-500 ease-in-out ${
+                      selectedTab === tab.value ? "bg-primary" : "bg-gray-100"
                     }`}
                   >
-                    {tab.label}
-                  </Text>
-                </AnimatedPressable>
-              ))}
+                    <View className="flex-row items-center gap-2">
+                      <Text
+                        className={`text-base font-medium ${
+                          selectedTab === tab.value
+                            ? "text-white"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {tab.label}
+                      </Text>
+                      {/* Badge com contagem (opcional) */}
+                      {count > 0 && (
+                        <View
+                          className={`px-2 py-0.5 rounded-full min-w-[20px] items-center justify-center ${
+                            selectedTab === tab.value
+                              ? "bg-white bg-opacity-20"
+                              : "bg-gray-300"
+                          }`}
+                        >
+                          <Text className={`text-xs font-bold text-gray-600`}>
+                            {count}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </AnimatedPressable>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -183,8 +193,8 @@ export default function History() {
           alerts={filteredAlerts}
           isLoading={isLoading}
           onAlertPress={handleAlertPress}
-          onAlertDeleted={handleAlertDeleted}
           onRefresh={handleRefresh}
+          readOnly
         />
       </View>
     </SafeAreaView>

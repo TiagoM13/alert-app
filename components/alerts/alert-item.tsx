@@ -25,9 +25,10 @@ interface AlertItemProps {
   alert: Alert;
   onPress?: (id: string) => void;
   onDeleteRequest?: (id: string) => void;
-  onCompleteRequest: (id: string) => void;
+  onCompleteRequest?: (id: string) => void;
   index?: number;
   resetSwipe?: boolean;
+  readOnly?: boolean;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -66,6 +67,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   onDeleteRequest,
   onCompleteRequest,
   resetSwipe = false,
+  readOnly = false,
 }) => {
   const timeAgo = formatDistanceToNow(new Date(alert?.createdAt!), {
     addSuffix: true,
@@ -122,23 +124,25 @@ export const AlertItem: React.FC<AlertItemProps> = ({
         return isHorizontal;
       }
 
-      return false; // Não captura micro-movimentos
+      return false;
     },
 
-    // NOVO: Também captura em start se já estivermos em um swipe ativo
+    // Captura em start se já estivermos em um swipe ativo
     onStartShouldSetPanResponder: () => {
-      return isSwipeActive.current;
+      return !readOnly && isSwipeActive.current;
     },
 
-    // Fase 2: Confirmar captura (chamado após onMoveShouldSetPanResponder retornar true)
+    // Fase 2: Confirmar captura
     onPanResponderGrant: () => {
-      isSwipeActive.current = true;
+      if (!readOnly) {
+        isSwipeActive.current = true;
+      }
     },
 
-    // CHAVE: Manter controle exclusivo uma vez que o swipe começou
+    // CORREÇÃO: Uma vez que o swipe horizontal começou, manter controle
     onPanResponderTerminationRequest: () => {
       // Se o swipe está ativo, NÃO permite que outros componentes roubem o gesto
-      return !isSwipeActive.current;
+      return false; // Sempre mantém o controle uma vez que começou
     },
 
     // Fase 3: Processar movimento
@@ -163,7 +167,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
         translateX.value = withTiming(-SCREEN_WIDTH, {}, () => {
           runOnJS(onDeleteRequest)(alert.id);
         });
-      } else if (shouldComplete) {
+      } else if (shouldComplete && onCompleteRequest) {
         translateX.value = withTiming(SCREEN_WIDTH, {}, () => {
           runOnJS(onCompleteRequest)(alert.id);
         });
@@ -178,10 +182,13 @@ export const AlertItem: React.FC<AlertItemProps> = ({
       isSwipeActive.current = false;
     },
 
-    // Libera o gesto se outro componente precisar
     onPanResponderTerminate: () => {
       if (isSwipeActive.current) {
-        translateX.value = withSpring(0);
+        translateX.value = withSpring(0, {
+          damping: 20,
+          stiffness: 300,
+          mass: 0.8,
+        });
         isSwipeActive.current = false;
       }
     },
@@ -202,31 +209,38 @@ export const AlertItem: React.FC<AlertItemProps> = ({
 
   return (
     <View>
-      {/* Botões de fundo */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          styles.deleteButtonBackground,
-          animatedDeleteButtonStyle,
-        ]}
-      >
-        <MaterialIcons name="delete" size={24} color="white" />
-        <Text style={styles.deleteButtonText}>Delete</Text>
-      </Animated.View>
+      {/* Botões de fundo - só aparecem se não estiver em modo somente leitura */}
+      {!readOnly && onDeleteRequest && (
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            styles.deleteButtonBackground,
+            animatedDeleteButtonStyle,
+          ]}
+        >
+          <MaterialIcons name="delete" size={24} color="white" />
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </Animated.View>
+      )}
 
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          styles.completeButtonBackground,
-          animatedCompleteButtonStyle,
-        ]}
-      >
-        <MaterialIcons name="done" size={24} color="white" />
-        <Text style={styles.completeButtonText}>Complete</Text>
-      </Animated.View>
+      {!readOnly && onCompleteRequest && (
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            styles.completeButtonBackground,
+            animatedCompleteButtonStyle,
+          ]}
+        >
+          <MaterialIcons name="done" size={24} color="white" />
+          <Text style={styles.completeButtonText}>Complete</Text>
+        </Animated.View>
+      )}
 
       {/* Item principal com PanResponder */}
-      <Animated.View style={[animatedItemStyle]} {...panResponder.panHandlers}>
+      <Animated.View
+        style={[animatedItemStyle]}
+        {...(!readOnly ? panResponder.panHandlers : {})}
+      >
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => onPress?.(alert.id)}
@@ -240,6 +254,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
               borderRightColor: "rgba(0,0,0,0.08)",
               borderBottomColor: "rgba(0,0,0,0.08)",
               backgroundColor: Theme.colors.white,
+              opacity: readOnly ? 0.8 : 1,
             }}
           >
             {/* Header */}

@@ -14,6 +14,7 @@ interface AlertListProps {
   onAlertDeleted?: (id: string) => void;
   onAlertCompleted?: (id: string) => void;
   onRefresh?: () => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function AlertList({
@@ -23,6 +24,7 @@ export function AlertList({
   onAlertDeleted,
   onAlertCompleted,
   onRefresh,
+  readOnly = false,
 }: AlertListProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"delete" | "complete">("delete");
@@ -33,6 +35,8 @@ export function AlertList({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCompleteRequest = (id: string) => {
+    if (readOnly) return;
+
     setAlertToHandle(id);
     setModalType("complete");
     setModalVisible(true);
@@ -40,6 +44,8 @@ export function AlertList({
   };
 
   const handleDeleteRequest = (id: string) => {
+    if (readOnly) return;
+
     setAlertToHandle(id);
     setModalType("delete");
     setModalVisible(true);
@@ -53,7 +59,7 @@ export function AlertList({
   };
 
   const handleConfirm = async () => {
-    if (!alertToHandle) return;
+    if (!alertToHandle || readOnly) return;
 
     try {
       if (modalType === "delete") {
@@ -100,6 +106,7 @@ export function AlertList({
       onCompleteRequest={handleCompleteRequest}
       resetSwipe={swipedItemId === item.id}
       index={index}
+      readOnly={readOnly}
     />
   );
 
@@ -143,13 +150,15 @@ export function AlertList({
           }
         />
       )}
-      <ConfirmationModal
-        isVisible={modalVisible}
-        message={modalMessage}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        isDelete={modalType === "delete"}
-      />
+      {!readOnly && (
+        <ConfirmationModal
+          isVisible={modalVisible}
+          message={modalMessage}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+          isDelete={modalType === "delete"}
+        />
+      )}
     </View>
   );
 }
