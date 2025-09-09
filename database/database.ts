@@ -244,3 +244,47 @@ export const findUserById = async (id: string): Promise<User | undefined> => {
     throw error;
   }
 };
+
+// Função para contar alertas por status para um usuário específico
+export const countAlertsByStatus = async (userId: string) => {
+  try {
+    const database = await getDb();
+
+    // Fazemos uma query que conta os alertas agrupados por status
+    const result = await database.getAllAsync<{
+      status: string;
+      count: number;
+    }>(
+      `SELECT status, COUNT(*) as count FROM alerts WHERE userId = ? GROUP BY status;`,
+      [userId]
+    );
+
+    // Inicializamos um objeto com valores padrão (0 para cada status)
+    const counts = {
+      total: 0,
+      pending: 0,
+      completed: 0,
+      overdue: 0,
+    };
+
+    // Percorremos o resultado e preenchemos os valores reais
+    result.forEach((row) => {
+      counts.total += row.count; // Soma total
+
+      // Atribui a contagem para cada status específico
+      if (row.status === "pending") {
+        counts.pending = row.count;
+      } else if (row.status === "completed") {
+        counts.completed = row.count;
+      } else if (row.status === "overdue") {
+        counts.overdue = row.count;
+      }
+    });
+
+    console.log("Contagem de alertas por status:", counts);
+    return counts;
+  } catch (error) {
+    console.error("Erro ao contar alertas por status:", error);
+    throw error;
+  }
+};

@@ -10,10 +10,17 @@ import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackButton } from "@/components/back-button";
+import { useAlertStats } from "@/hooks/useAlertStats";
 import { version } from "../package.json";
 
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuth();
+
+  const {
+    stats,
+    isLoading: statsLoading,
+    fetchStats,
+  } = useAlertStats(user?.id);
 
   const handleSignOut = async () => {
     Alert.alert("Sair", "Tem certeza que deseja sair?", [
@@ -35,8 +42,9 @@ export default function Profile() {
   useFocusEffect(
     useCallback(() => {
       refreshUser();
+      fetchStats();
       return () => {};
-    }, [refreshUser])
+    }, [refreshUser, fetchStats])
   );
 
   return (
@@ -91,19 +99,25 @@ export default function Profile() {
           {/* Status */}
           <View className="py-8 flex-row gap-5 justify-center bg-cardBackground/20 px-6">
             <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
-              <Text className="text-primary font-bold text-4xl">47</Text>
+              <Text className="text-primary font-bold text-4xl">
+                {statsLoading ? "..." : stats.total}
+              </Text>
               <Text className="text-textDescription text-base text-center text-wrap font-medium">
                 Alerts Received
               </Text>
             </View>
             <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
-              <Text className="text-success font-bold text-4xl">42</Text>
+              <Text className="text-success font-bold text-4xl">
+                {statsLoading ? "..." : stats.completed}
+              </Text>
               <Text className="text-textDescription text-base text-center text-wrap font-medium">
                 Resolved
               </Text>
             </View>
             <View className="bg-white rounded-lg py-5 px-3 items-center flex-1">
-              <Text className="text-warning font-bold text-4xl">5</Text>
+              <Text className="text-warning font-bold text-4xl">
+                {statsLoading ? "..." : stats.pending + stats.overdue}
+              </Text>
               <Text className="text-textDescription text-base text-center text-wrap font-medium">
                 Active
               </Text>
