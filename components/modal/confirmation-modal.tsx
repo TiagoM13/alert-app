@@ -21,6 +21,7 @@ interface ConfirmationModalProps {
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
+  isDelete?: boolean;
 }
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MODAL_HEIGHT = 200;
@@ -29,6 +30,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   onCancel,
   onConfirm,
+  isDelete,
 }) => {
   const translateY = useSharedValue(MODAL_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -78,7 +80,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={[
+                styles.button,
+                isDelete ? styles.deleteButton : styles.completeButton,
+              ]}
               onPress={onConfirm}
               activeOpacity={0.7}
             >
@@ -152,10 +157,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: Theme.colors.cardBackground, // Cinza claro
+    backgroundColor: Theme.colors.cardBackground,
   },
-  confirmButton: {
-    backgroundColor: Theme.colors.alert, // Vermelho de alerta
+  deleteButton: {
+    backgroundColor: Theme.colors.alert,
+  },
+  completeButton: {
+    backgroundColor: Theme.colors.success,
   },
   buttonText: {
     fontSize: 16,

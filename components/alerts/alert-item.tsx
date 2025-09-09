@@ -1,20 +1,17 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
+import { Theme } from "@/constants";
+import { MaterialIcons, SimpleLineIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Dimensions,
+  PanResponder,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-
-import { Theme } from "@/constants";
 import Animated, {
   Extrapolation,
-  FadeInDown,
   interpolate,
   runOnJS,
   useAnimatedStyle,
@@ -34,8 +31,8 @@ interface AlertItemProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3; // Define o limite de arraste para a ação de exclusão
-const SWIPE_VELOCITY_THRESHOLD = 500; // Limiar de velocidade para o arraste ser considerado forte
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
+const SWIPE_VELOCITY_THRESHOLD = 400;
 const HORIZONTAL_PADDING = 16;
 
 const getColorByType = (type: Alert["type"]) => {
@@ -68,7 +65,6 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   onPress,
   onDeleteRequest,
   onCompleteRequest,
-  index = 0,
   resetSwipe = false,
 }) => {
   const timeAgo = formatDistanceToNow(new Date(alert?.createdAt!), {
@@ -76,25 +72,23 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   });
   const color = getColorByType(alert.type);
 
-  // Valor compartilhado para a animação do arraste
+  // Valores compartilhados para animação
   const translateX = useSharedValue(0);
+  const isSwipeActive = useRef(false);
 
   const animatedItemStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
-      // marginHorizontal: HORIZONTAL_PADDING,
     };
   });
 
   const animatedDeleteButtonStyle = useAnimatedStyle(() => {
-    // Interpola a opacidade do botão para que ele apareça gradualmente
     const opacity = interpolate(
       translateX.value,
-      [0, -SWIPE_THRESHOLD],
+      [-SWIPE_THRESHOLD * 0.5, -SWIPE_THRESHOLD],
       [0, 1],
       Extrapolation.CLAMP
     );
-
     return {
       opacity: opacity,
       right: -HORIZONTAL_PADDING,
@@ -104,7 +98,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
   const animatedCompleteButtonStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
       translateX.value,
-      [0, SWIPE_THRESHOLD],
+      [SWIPE_THRESHOLD * 0.5, SWIPE_THRESHOLD],
       [0, 1],
       Extrapolation.CLAMP
     );
@@ -114,19 +108,56 @@ export const AlertItem: React.FC<AlertItemProps> = ({
     };
   });
 
-  const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      // Permite o arraste em ambas as direções
-      translateX.value = event.translationX;
-    })
-    .onEnd((event) => {
-      const shouldDelete =
-        translateX.value < -SWIPE_THRESHOLD ||
-        event.velocityX < -SWIPE_VELOCITY_THRESHOLD;
+  const panResponder = PanResponder.create({
+    // Fase 1: Decidir se deve capturar o gesto
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      const { dx, dy } = gestureState;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
 
+      // Só captura se for movimento claramente horizontal
+      // E se já tiver movimento mínimo
+      if (absX > 10 || absY > 10) {
+        const isHorizontal = absX > absY * 1.5;
+        return isHorizontal;
+      }
+
+      return false; // Não captura micro-movimentos
+    },
+
+    // NOVO: Também captura em start se já estivermos em um swipe ativo
+    onStartShouldSetPanResponder: () => {
+      return isSwipeActive.current;
+    },
+
+    // Fase 2: Confirmar captura (chamado após onMoveShouldSetPanResponder retornar true)
+    onPanResponderGrant: () => {
+      isSwipeActive.current = true;
+    },
+
+    // CHAVE: Manter controle exclusivo uma vez que o swipe começou
+    onPanResponderTerminationRequest: () => {
+      // Se o swipe está ativo, NÃO permite que outros componentes roubem o gesto
+      return !isSwipeActive.current;
+    },
+
+    // Fase 3: Processar movimento
+    onPanResponderMove: (evt, gestureState) => {
+      if (isSwipeActive.current) {
+        translateX.value = gestureState.dx;
+      }
+    },
+
+    // Fase 4: Finalizar gesto
+    onPanResponderRelease: (evt, gestureState) => {
+      if (!isSwipeActive.current) return;
+
+      const { dx, vx } = gestureState;
+
+      const shouldDelete =
+        dx < -SWIPE_THRESHOLD || vx < -SWIPE_VELOCITY_THRESHOLD / 1000;
       const shouldComplete =
-        translateX.value > SWIPE_THRESHOLD ||
-        event.velocityX > SWIPE_VELOCITY_THRESHOLD;
+        dx > SWIPE_THRESHOLD || vx > SWIPE_VELOCITY_THRESHOLD / 1000;
 
       if (shouldDelete && onDeleteRequest) {
         translateX.value = withTiming(-SCREEN_WIDTH, {}, () => {
@@ -137,20 +168,41 @@ export const AlertItem: React.FC<AlertItemProps> = ({
           runOnJS(onCompleteRequest)(alert.id);
         });
       } else {
-        translateX.value = withSpring(0);
+        translateX.value = withSpring(0, {
+          damping: 20,
+          stiffness: 300,
+          mass: 0.8,
+        });
       }
-    });
+
+      isSwipeActive.current = false;
+    },
+
+    // Libera o gesto se outro componente precisar
+    onPanResponderTerminate: () => {
+      if (isSwipeActive.current) {
+        translateX.value = withSpring(0);
+        isSwipeActive.current = false;
+      }
+    },
+  });
 
   useEffect(() => {
     if (resetSwipe && translateX.value !== 0) {
-      translateX.value = withSpring(0);
+      translateX.value = withSpring(0, {
+        damping: 20,
+        stiffness: 300,
+        mass: 0.8,
+      });
+      isSwipeActive.current = false;
     }
   }, [resetSwipe, translateX]);
 
   const statusStyles = getStatusStyles(alert.status);
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
+    <View>
+      {/* Botões de fundo */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -161,6 +213,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({
         <MaterialIcons name="delete" size={24} color="white" />
         <Text style={styles.deleteButtonText}>Delete</Text>
       </Animated.View>
+
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -171,91 +224,91 @@ export const AlertItem: React.FC<AlertItemProps> = ({
         <MaterialIcons name="done" size={24} color="white" />
         <Text style={styles.completeButtonText}>Complete</Text>
       </Animated.View>
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[animatedItemStyle]}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => onPress?.(alert.id)}
-            style={styles.touchable}
+
+      {/* Item principal com PanResponder */}
+      <Animated.View style={[animatedItemStyle]} {...panResponder.panHandlers}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => onPress?.(alert.id)}
+          style={styles.touchable}
+        >
+          <View
+            className="p-4 rounded-2xl justify-center gap-1.5 border-r border-b"
+            style={{
+              borderLeftWidth: 4,
+              borderLeftColor: color,
+              borderRightColor: "rgba(0,0,0,0.08)",
+              borderBottomColor: "rgba(0,0,0,0.08)",
+              backgroundColor: Theme.colors.white,
+            }}
           >
-            <View
-              className="p-4 rounded-2xl justify-center gap-1.5 border-r border-b"
-              style={{
-                borderLeftWidth: 4,
-                borderLeftColor: color,
-                borderRightColor: "rgba(0,0,0,0.08)",
-                borderBottomColor: "rgba(0,0,0,0.08)",
-                backgroundColor: Theme.colors.white,
-              }}
-            >
-              {/* Header */}
-              <View className="flex-row justify-between items-center">
-                <View className="flex-row gap-4 items-center">
-                  <Text className="text-lg font-semibold" style={{ color }}>
-                    {alert.type}
+            {/* Header */}
+            <View className="flex-row justify-between items-center">
+              <View className="flex-row gap-4 items-center">
+                <Text className="text-lg font-semibold" style={{ color }}>
+                  {alert.type}
+                </Text>
+
+                <View className="flex-row items-center gap-2">
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: statusStyles.color,
+                    }}
+                  />
+                  <Text
+                    className="text-sm font-medium"
+                    style={{ color: statusStyles.color }}
+                  >
+                    {statusStyles.text}
                   </Text>
-
-                  <View className="flex-row items-center gap-2">
-                    <View
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: statusStyles.color,
-                      }}
-                    />
-                    <Text
-                      className="text-sm font-medium"
-                      style={{ color: statusStyles.color }}
-                    >
-                      {statusStyles.text}
-                    </Text>
-                  </View>
                 </View>
-                <SimpleLineIcons
-                  name="arrow-right"
-                  size={16}
-                  color={Theme.colors.textLabel}
-                />
               </View>
-
-              {/* Title */}
-              <Text className="text-xl font-bold">{alert.title}</Text>
-
-              {/* Message */}
-              <Text
-                className="text-lg font-normal text-textDescription"
-                numberOfLines={1}
-              >
-                {alert.message}
-              </Text>
-
-              {/* Footer */}
-              <View className="flex-row items-center gap-1.5 mt-1">
-                {alert.location && (
-                  <>
-                    <MaterialIcons
-                      name="location-on"
-                      size={16}
-                      color={Theme.colors.textLabel}
-                    />
-                    <Text className="text-sm text-textLabel">
-                      {alert.location}
-                    </Text>
-                  </>
-                )}
-                <SimpleLineIcons
-                  name="clock"
-                  size={12}
-                  color={Theme.colors.textLabel}
-                />
-                <Text className="text-sm text-textLabel">{timeAgo}</Text>
-              </View>
+              <SimpleLineIcons
+                name="arrow-right"
+                size={16}
+                color={Theme.colors.textLabel}
+              />
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </GestureDetector>
-    </Animated.View>
+
+            {/* Title */}
+            <Text className="text-xl font-bold">{alert.title}</Text>
+
+            {/* Message */}
+            <Text
+              className="text-lg font-normal text-textDescription"
+              numberOfLines={1}
+            >
+              {alert.message}
+            </Text>
+
+            {/* Footer */}
+            <View className="flex-row items-center gap-1.5 mt-1">
+              {alert.location && (
+                <>
+                  <MaterialIcons
+                    name="location-on"
+                    size={16}
+                    color={Theme.colors.textLabel}
+                  />
+                  <Text className="text-sm text-textLabel">
+                    {alert.location}
+                  </Text>
+                </>
+              )}
+              <SimpleLineIcons
+                name="clock"
+                size={12}
+                color={Theme.colors.textLabel}
+              />
+              <Text className="text-sm text-textLabel">{timeAgo}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
   );
 };
 

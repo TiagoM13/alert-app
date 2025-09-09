@@ -119,6 +119,7 @@ export function AlertList({
         message={modalMessage}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+        isDelete={modalType === "delete"}
       />
     </View>
   );
