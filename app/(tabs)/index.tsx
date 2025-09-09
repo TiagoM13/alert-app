@@ -4,7 +4,7 @@ import { Alert } from "@/components/alerts/types";
 import { useAuth } from "@/context/auth";
 import { fetchAlerts, updateAlertStatus } from "@/database/database";
 import { useFocusEffect } from "@react-navigation/native";
-import { isAfter } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { SafeAreaView, View } from "react-native";
@@ -20,12 +20,30 @@ export default function Home() {
       if (!user) return;
       let data = await fetchAlerts(user.id);
 
-      const overdueUpdates = data.filter(
-        (alert) =>
-          alert.scheduledAt &&
-          alert.status === "pending" &&
-          isAfter(new Date(), alert.scheduledAt)
-      );
+      const overdueUpdates = data.filter((alert) => {
+        if (!alert.scheduledAt || alert.status !== "pending") return false;
+
+        // Trata o scheduledAt como horário local
+        const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
+        const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
+        const scheduledAtLocalISO = format(
+          scheduledAtLocal,
+          "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        );
+
+        // Hora atual local
+        const nowLocal = new Date();
+        const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        console.log(`\n--- Alerta: ${alert.title} ---`);
+        console.log("Agora (local):", nowLocalISO);
+        console.log("Agendado (local):", scheduledAtLocalISO);
+
+        const isOverdue = nowLocalISO > scheduledAtLocalISO;
+        console.log("É vencido?", isOverdue);
+
+        return isOverdue;
+      });
 
       if (overdueUpdates.length > 0) {
         await Promise.all(

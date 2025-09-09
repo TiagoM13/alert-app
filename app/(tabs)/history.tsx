@@ -6,8 +6,9 @@ import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 import { Alert } from "@/components/alerts/types";
 import { useAuth } from "@/context/auth";
-import { fetchAlerts } from "@/database/database";
+import { fetchAlerts, updateAlertStatus } from "@/database/database";
 import { useFocusEffect } from "@react-navigation/native";
+import { format, parseISO } from "date-fns";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -48,7 +49,40 @@ export default function History() {
     setIsLoading(true);
     try {
       if (!user) return;
-      const data = await fetchAlerts(user.id);
+      let data = await fetchAlerts(user.id);
+
+      const overdueUpdates = data.filter((alert) => {
+        if (!alert.scheduledAt || alert.status !== "pending") return false;
+
+        // Trata o scheduledAt como horário local
+        const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
+        const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
+        const scheduledAtLocalISO = format(
+          scheduledAtLocal,
+          "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        );
+
+        // Hora atual local
+        const nowLocal = new Date();
+        const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        console.log(`\n--- Alerta: ${alert.title} ---`);
+        console.log("Agora (local):", nowLocalISO);
+        console.log("Agendado (local):", scheduledAtLocalISO);
+
+        const isOverdue = nowLocalISO > scheduledAtLocalISO;
+        console.log("É vencido?", isOverdue);
+
+        return isOverdue;
+      });
+
+      if (overdueUpdates.length > 0) {
+        await Promise.all(
+          overdueUpdates.map((alert) => updateAlertStatus(alert.id, "overdue"))
+        );
+        data = await fetchAlerts(user.id);
+      }
+
       setAllAlerts(data);
     } catch (error) {
       console.error("Erro ao carregar alertas:", error);
