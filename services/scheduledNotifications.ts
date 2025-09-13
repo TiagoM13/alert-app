@@ -1,6 +1,6 @@
 import { addMinutes, parseISO } from "date-fns";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -11,31 +11,103 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// ✅ CORRIGIDO: Função que respeita as escolhas do usuário
 export const requestNotificationPermissions = async (): Promise<boolean> => {
   try {
-    const { status: existingStatus } =
+    // 1. Verifica o status atual das permissões
+    const { status: existingStatus, canAskAgain } =
       await Notifications.getPermissionsAsync();
 
-    let finalStatus = existingStatus;
+    console.log("📋 Status atual:", existingStatus);
+    console.log("❓ Pode perguntar novamente:", canAskAgain);
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+    // 2. Se já tem permissão, configura e retorna
+    if (existingStatus === "granted") {
+      console.log("✅ Permissão já concedida");
+      if (Platform.OS === "android") {
+        await setupAndroidChannel();
+      }
+      return true;
     }
 
-    if (finalStatus !== "granted") {
+    // 3. Se não pode perguntar novamente (usuário negou permanentemente)
+    if (!canAskAgain) {
+      console.log("❌ Usuário negou permanentemente as notificações");
       return false;
     }
 
-    if (Platform.OS === "android") {
-      await setupAndroidChannel();
-    }
+    // 4. ✅ AQUI que deve aparecer o modal do sistema
+    console.log("🔔 Solicitando permissões ao usuário...");
+    const { status: newStatus } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+        allowDisplayInCarPlay: false,
+        allowCriticalAlerts: false,
+        provideAppNotificationSettings: false,
+        allowProvisional: false,
+      },
+      android: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
 
-    return true;
+    console.log("📋 Nova resposta do usuário:", newStatus);
+
+    if (newStatus === "granted") {
+      console.log("✅ Usuário concedeu permissão");
+      if (Platform.OS === "android") {
+        await setupAndroidChannel();
+      }
+      return true;
+    } else {
+      console.log("❌ Usuário negou permissão");
+      return false;
+    }
   } catch (error) {
     console.error("❌ Erro ao solicitar permissões:", error);
     return false;
   }
+};
+
+// ✅ Função para verificar se pode enviar notificações
+export const canSendNotifications = async (): Promise<boolean> => {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === "granted";
+  } catch (error) {
+    console.error("❌ Erro ao verificar permissões:", error);
+    return false;
+  }
+};
+
+// ✅ Função para mostrar alerta quando permissão é negada
+export const showNotificationPermissionAlert = () => {
+  Alert.alert(
+    "Notificações Desabilitadas",
+    "Para receber alertas importantes, você pode habilitar as notificações nas configurações do dispositivo.",
+    [
+      {
+        text: "Agora Não",
+        style: "cancel",
+      },
+      {
+        text: "Configurações",
+        onPress: () => {
+          // Abre as configurações do app
+          if (Platform.OS === "ios") {
+            Notifications.getPermissionsAsync();
+          } else {
+            // Para Android, você pode usar Linking
+            console.log("Abrir configurações Android");
+          }
+        },
+      },
+    ]
+  );
 };
 
 const setupAndroidChannel = async () => {
@@ -56,14 +128,17 @@ const setupAndroidChannel = async () => {
   }
 };
 
+// ✅ ATUALIZADO: Só agenda se tiver permissão
 export const scheduleOverdueNotification = async (
   alertId: string,
   alertTitle: string,
   scheduledAt: string
 ): Promise<string | null> => {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== "granted") {
+    // ✅ Verifica permissão antes de agendar
+    const hasPermission = await canSendNotifications();
+    if (!hasPermission) {
+      console.log("⚠️ Sem permissão para notificações - não agendando");
       return null;
     }
 
@@ -103,6 +178,7 @@ export const scheduleOverdueNotification = async (
   }
 };
 
+// ✅ ATUALIZADO: Só agenda se tiver permissão
 export const scheduleReminderNotification = async (
   alertId: string,
   alertTitle: string,
@@ -110,8 +186,13 @@ export const scheduleReminderNotification = async (
   minutesBefore: number = 15
 ): Promise<string | null> => {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== "granted") return null;
+    const hasPermission = await canSendNotifications();
+    if (!hasPermission) {
+      console.log(
+        "⚠️ Sem permissão para notificações - não agendando lembrete"
+      );
+      return null;
+    }
 
     const scheduledAtWithoutZ = scheduledAt.replace("Z", "");
     const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
@@ -176,8 +257,9 @@ export const cancelAllNotifications = async () => {
 
 export const testNotification = async () => {
   try {
-    const hasPermission = await requestNotificationPermissions();
+    const hasPermission = await canSendNotifications();
     if (!hasPermission) {
+      console.log("❌ Sem permissão para teste");
       return false;
     }
 

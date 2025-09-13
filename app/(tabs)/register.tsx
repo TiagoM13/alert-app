@@ -13,6 +13,8 @@ import {
 } from "@/database/database";
 import {
   cancelScheduledNotification,
+  canSendNotifications,
+  requestNotificationPermissions,
   scheduleOverdueNotification,
   scheduleReminderNotification,
 } from "@/services/scheduledNotifications";
@@ -37,65 +39,60 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Switch from "react-native-switch-toggle";
 import Toast from "react-native-toast-message";
-
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-const alertSchema = z
-  .object({
-    alertType: z.string().min(1, "Selecione um tipo de alerta"),
-    title: z
-      .string()
-      .min(1, "Título é obrigatório")
-      .max(100, "Título muito longo"),
-    description: z
-      .string()
-      .min(10, "Descrição deve ter pelo menos 10 caracteres")
-      .max(500, "Descrição muito longa"),
-    location: z.string().optional(),
-    priority: z.enum(["Low", "Medium", "High"]),
-    scheduledDate: z.string().optional(),
-    scheduledTime: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      return true; // Por enquanto, mantém simples
-    },
-    {
-      message: "Data e hora são obrigatórias quando agendamento está ativo",
-    }
-  );
+const alertSchema = z.object({
+  alertType: z.string().min(1, "Selecione um tipo de alerta"),
+  title: z
+    .string()
+    .min(1, "Título é obrigatório")
+    .max(100, "Título muito longo"),
+  description: z
+    .string()
+    .min(10, "Descrição deve ter pelo menos 10 caracteres")
+    .max(500, "Descrição muito longa"),
+  location: z.string().optional(),
+  priority: z.enum(["Low", "Medium", "High"]),
+  scheduledDate: z.string().optional(),
+  scheduledTime: z.string().optional(),
+});
 
 export type AlertFormData = z.infer<typeof alertSchema>;
 
 const priorityOptions = [
-  {
-    label: "Low",
-  },
-  {
-    label: "Medium",
-  },
-  {
-    label: "High",
-  },
+  { label: "Low" },
+  { label: "Medium" },
+  { label: "High" },
 ];
 
-// Função helper para agendar notificações
+// ✅ Função helper otimizada para agendar notificações
 const scheduleNotificationsForAlert = async (
   alert: Alert
 ): Promise<{
   notificationId?: string;
   reminderNotificationId?: string;
+  hasPermission: boolean;
 }> => {
   const notifications: {
     notificationId?: string;
     reminderNotificationId?: string;
-  } = {};
+    hasPermission: boolean;
+  } = { hasPermission: false };
 
   if (alert.scheduledAt && alert.status === "pending") {
-    try {
-      console.log("📅 Agendando notificações para alerta:", alert.title);
+    // Verifica se tem permissão para notificações
+    const hasPermission = await canSendNotifications();
+    notifications.hasPermission = hasPermission;
 
+    if (!hasPermission) {
+      console.log(
+        "⚠️ Sem permissão para notificações - alertas não serão agendados"
+      );
+      return notifications;
+    }
+
+    try {
       // Agenda notificação de vencimento
       const notificationId = await scheduleOverdueNotification(
         alert.id,
@@ -105,7 +102,6 @@ const scheduleNotificationsForAlert = async (
 
       if (notificationId) {
         notifications.notificationId = notificationId;
-        console.log("✅ Notificação de vencimento agendada:", notificationId);
       }
 
       // Agenda lembrete 15 minutos antes
@@ -113,12 +109,11 @@ const scheduleNotificationsForAlert = async (
         alert.id,
         alert.title,
         alert.scheduledAt,
-        15 // 15 minutos antes
+        15
       );
 
       if (reminderNotificationId) {
         notifications.reminderNotificationId = reminderNotificationId;
-        console.log("✅ Lembrete agendado:", reminderNotificationId);
       }
     } catch (error) {
       console.error("❌ Erro ao agendar notificações:", error);
@@ -128,32 +123,24 @@ const scheduleNotificationsForAlert = async (
   return notifications;
 };
 
-// Função helper para cancelar notificações antigas
+// ✅ Função helper simplificada para cancelar notificações antigas
 const cancelOldNotifications = async (alertId: string) => {
   try {
     const existingAlert = await fetchAlertById(alertId);
 
     if (existingAlert?.notificationId) {
       await cancelScheduledNotification(existingAlert.notificationId);
-      console.log(
-        "🗑️ Notificação antiga cancelada:",
-        existingAlert.notificationId
-      );
     }
 
     if (existingAlert?.reminderNotificationId) {
       await cancelScheduledNotification(existingAlert.reminderNotificationId);
-      console.log(
-        "🗑️ Lembrete antigo cancelado:",
-        existingAlert.reminderNotificationId
-      );
     }
   } catch (error) {
     console.error("❌ Erro ao cancelar notificações antigas:", error);
   }
 };
 
-export default function Regiter() {
+export default function Register() {
   const { id } = useLocalSearchParams();
   const isEditing = !!id;
   const { user } = useAuth();
@@ -162,7 +149,6 @@ export default function Regiter() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
   const [isScheduled, setIsScheduled] = useState(false);
-  const [notificationsScheduled, setNotificationsScheduled] = useState(false);
 
   const {
     control,
@@ -201,7 +187,29 @@ export default function Regiter() {
     hideTimePicker();
   };
 
-  console.log({ errors });
+  // ✅ Função otimizada para verificar e solicitar permissões quando necessário
+  const handleScheduleToggle = async (newValue: boolean) => {
+    setIsScheduled(newValue);
+
+    // Se está ativando o agendamento, verifica permissões
+    if (newValue) {
+      const hasPermission = await canSendNotifications();
+
+      if (!hasPermission) {
+        // Solicita permissão
+        const granted = await requestNotificationPermissions();
+
+        if (!granted) {
+          Toast.show({
+            type: "warning",
+            text1: "Notificações Desabilitadas",
+            text2: "Você pode ativar nas configurações para receber alertas",
+            visibilityTime: 4000,
+          });
+        }
+      }
+    }
+  };
 
   const onSubmit = async (data: AlertFormData) => {
     if (!user) {
@@ -212,11 +220,8 @@ export default function Regiter() {
     try {
       if (isEditing && typeof id === "string") {
         // === MODO EDIÇÃO ===
-
-        // 1. Cancela notificações antigas primeiro
         await cancelOldNotifications(id);
 
-        // 2. Cria o alerta atualizado
         const updatedAlert: Alert = {
           id: id,
           userId: user.id,
@@ -224,7 +229,7 @@ export default function Regiter() {
           message: data.description,
           type: data.alertType as AlertType,
           priority: data.priority as AlertPriority,
-          createdAt: new Date().toISOString(), // Você pode manter a data original se quiser
+          createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           location: data.location || "",
           scheduledAt: isScheduled
@@ -233,14 +238,11 @@ export default function Regiter() {
           status: "pending",
         };
 
-        // 3. Atualiza o alerta no banco
         await updateAlert(updatedAlert);
-        console.log("✅ Alerta atualizado no banco de dados:", updatedAlert);
 
-        // 4. Agenda novas notificações se necessário
+        // ✅ Agenda notificações com verificação de permissão
         const notifications = await scheduleNotificationsForAlert(updatedAlert);
 
-        // 5. Salva os IDs das notificações no banco
         if (
           notifications.notificationId ||
           notifications.reminderNotificationId
@@ -250,25 +252,26 @@ export default function Regiter() {
             notifications.notificationId,
             notifications.reminderNotificationId
           );
-          console.log("✅ IDs de notificação atualizados");
         }
 
         router.push("/(tabs)");
         reset();
 
+        // ✅ Toast com feedback sobre notificações
         Toast.show({
           type: "success",
           text1: "Alert updated successfully!",
-          text2: notifications.notificationId
-            ? "Alert updated and notifications scheduled"
-            : "Alert updated successfully",
+          text2:
+            isScheduled && !notifications.hasPermission
+              ? "Ative notificações nas configurações para receber alertas"
+              : notifications.notificationId
+                ? "Alert updated and notifications scheduled"
+                : "Alert updated successfully",
           visibilityTime: 3000,
           autoHide: true,
         });
       } else {
         // === MODO CRIAÇÃO ===
-
-        // 1. Cria o novo alerta
         const newAlert: Alert = {
           id: uuidv4(),
           userId: user.id,
@@ -285,14 +288,11 @@ export default function Regiter() {
           status: "pending",
         };
 
-        // 2. Salva o alerta no banco
         await insertAlert(newAlert);
-        console.log("✅ Alerta salvo no banco de dados:", newAlert);
 
-        // 3. Agenda notificações se necessário
+        // ✅ Agenda notificações com verificação de permissão
         const notifications = await scheduleNotificationsForAlert(newAlert);
 
-        // 4. Salva os IDs das notificações no banco
         if (
           notifications.notificationId ||
           notifications.reminderNotificationId
@@ -302,18 +302,21 @@ export default function Regiter() {
             notifications.notificationId,
             notifications.reminderNotificationId
           );
-          console.log("✅ IDs de notificação salvos");
         }
 
         reset();
         router.push("/(tabs)");
 
+        // ✅ Toast com feedback sobre notificações
         Toast.show({
           type: "success",
           text1: "Alert created successfully!",
-          text2: notifications.notificationId
-            ? "Alert created and notifications scheduled"
-            : "Alert created successfully",
+          text2:
+            isScheduled && !notifications.hasPermission
+              ? "Ative notificações nas configurações para receber alertas"
+              : notifications.notificationId
+                ? "Alert created and notifications scheduled"
+                : "Alert created successfully",
           visibilityTime: 3000,
           autoHide: true,
         });
@@ -397,11 +400,7 @@ export default function Regiter() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView
         className="flex-1 px-6"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -414,7 +413,6 @@ export default function Regiter() {
               setIsScheduled(false);
             }}
           />
-
           <Text className="text-black text-[24px] font-semibold">
             {isEditing ? "Edit Alert" : "Add Alert"}
           </Text>
@@ -424,14 +422,11 @@ export default function Regiter() {
         <ScrollView
           className="flex-1 py-4 gap-4 mt-4"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 10,
-          }}
+          contentContainerStyle={{ paddingBottom: 10 }}
         >
           <SelectType name="alertType" control={control} />
 
           <View className="gap-2 space-y-4 mt-6">
-            {/* Title Input */}
             <InputText
               name="title"
               control={control}
@@ -443,7 +438,6 @@ export default function Regiter() {
               }
             />
 
-            {/* Description Input */}
             <InputTextarea
               name="description"
               control={control}
@@ -455,7 +449,6 @@ export default function Regiter() {
               }
             />
 
-            {/* Location Input */}
             <InputText
               name="location"
               control={control}
@@ -471,7 +464,6 @@ export default function Regiter() {
               }
             />
 
-            {/* Priority Selection */}
             <View className="gap-2">
               <Text className="text-lg font-medium">Priority Level</Text>
               <Controller
@@ -519,12 +511,12 @@ export default function Regiter() {
               )}
             </View>
 
-            {/* 2. Toggle "Schedule Alert" */}
+            {/* ✅ Toggle otimizado com verificação de permissões */}
             <View className="flex-row items-center justify-between mt-6">
               <Text className="text-lg font-medium">Schedule Alert</Text>
               <Switch
                 switchOn={isScheduled}
-                onPress={() => setIsScheduled(!isScheduled)}
+                onPress={() => handleScheduleToggle(!isScheduled)}
                 circleColorOff={Theme.colors.white}
                 circleColorOn={Theme.colors.white}
                 backgroundColorOff={Theme.colors.cardBackground}
@@ -564,7 +556,6 @@ export default function Regiter() {
               </View>
             )}
 
-            {/* 3. Inputs de Data e Hora Condicionais */}
             {isScheduled && (
               <View className="gap-4 mt-4">
                 <View className="flex-1">
@@ -622,7 +613,6 @@ export default function Regiter() {
               </View>
             )}
 
-            {/* Action Buttons */}
             <View className="flex-row items-center justify-between gap-2 mt-10 mb-10">
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -639,9 +629,7 @@ export default function Regiter() {
                 className="flex-1 bg-primary rounded-xl p-4"
               >
                 <Text className="text-center text-lg text-white font-semibold">
-                  <Text className="text-center text-lg text-white font-semibold">
-                    {isEditing ? "Update Alert" : "Create Alert"}
-                  </Text>
+                  {isEditing ? "Update Alert" : "Create Alert"}
                 </Text>
               </TouchableOpacity>
             </View>
