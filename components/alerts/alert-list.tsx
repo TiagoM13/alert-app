@@ -1,5 +1,8 @@
 import { Theme } from "@/constants";
-import { deleteAlert, updateAlertStatus } from "@/database/database";
+import {
+  completeAlertWithNotifications,
+  deleteAlertWithNotifications,
+} from "@/database/database";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { FlatList, RefreshControl } from "react-native-gesture-handler";
@@ -58,17 +61,20 @@ export function AlertList({
     setSwipedItemId(null);
   };
 
+  // Substitua a função de deletar por:
   const handleConfirm = async () => {
-    if (!alertToHandle || readOnly) return;
+    if (!alertToHandle) return;
 
     try {
       if (modalType === "delete") {
-        await deleteAlert(alertToHandle);
+        // Use a nova função que cancela notificações
+        await deleteAlertWithNotifications(alertToHandle);
         if (onAlertDeleted) {
           onAlertDeleted(alertToHandle);
         }
       } else if (modalType === "complete") {
-        await updateAlertStatus(alertToHandle, "completed");
+        // Use a nova função que cancela notificações
+        await completeAlertWithNotifications(alertToHandle);
         if (onAlertCompleted) {
           onAlertCompleted(alertToHandle);
         }

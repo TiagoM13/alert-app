@@ -1,8 +1,8 @@
 import { Alert } from "@/components/alerts/types";
 import { fetchAlerts } from "@/database/database";
-import { checkAndUpdateOverdueAlerts } from "@/services";
+import { checkAndUpdateOverdueAlerts } from "@/services/alertStatusChecker";
+import { useNotificationListener } from "@/services/notificationsListeners";
 import { useCallback, useState } from "react";
-import { useActiveSync } from "./useActiveSync";
 
 interface UseAlertsOptions {
   includeCompleted?: boolean;
@@ -36,33 +36,27 @@ export const useAlerts = (
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastSyncTime, setLastSyncTime] = useState<number>(0);
 
-  // NOVO: Sync ativo quando app está em uso
-  useActiveSync({
-    userId,
-    intervalMinutes: 2, // Verifica a cada 2 minutos quando ativo
-    onSyncComplete: (result) => {
-      if (result.success && result.updatedCount > 0) {
-        console.log(
-          `🔄 ${result.updatedCount} alertas atualizados - recarregando lista`
-        );
-        setLastSyncTime(Date.now()); // Força re-render
-      }
-    },
+  // ✅ NOVO: Listener para notificações em tempo real
+  useNotificationListener(() => {
+    // Quando uma notificação atualiza um status, recarrega a lista
+    if (!readOnly) {
+      console.log("🔄 Recarregando alertas após notificação...");
+      fetchAndProcessAlerts();
+    }
   });
 
   const fetchAndProcessAlerts = useCallback(async () => {
     if (!userId) return;
 
     try {
-      // Se deve atualizar alertas vencidos automaticamente
+      // ✅ Se deve verificar alertas vencidos E não está em modo somente leitura
       if (autoUpdateOverdue && !readOnly) {
-        console.log("🔄 Verificando alertas vencidos via hook...");
+        console.log("🔄 Verificando alertas vencidos...");
         await checkAndUpdateOverdueAlerts(userId);
       }
 
-      // Busca os alertas atualizados
+      // Busca os alertas (agora já atualizados)
       let data = await fetchAlerts(userId);
 
       // Filtra alertas baseado nas opções
@@ -85,14 +79,7 @@ export const useAlerts = (
       console.error("Erro ao processar alertas:", error);
       throw error;
     }
-  }, [
-    userId,
-    includeCompleted,
-    includeOverdue,
-    autoUpdateOverdue,
-    readOnly,
-    lastSyncTime,
-  ]);
+  }, [userId, includeCompleted, includeOverdue, autoUpdateOverdue, readOnly]);
 
   // Função para loading inicial (com loading geral)
   const loadAlertsInitial = useCallback(async () => {

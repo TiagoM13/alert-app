@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "@/context/auth";
-import { checkAndUpdateOverdueAlerts } from "@/services";
+import { checkAndUpdateOverdueAlerts } from "@/services/alertStatusChecker";
 import { SplashScreen, Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { AppState } from "react-native";
@@ -40,8 +40,12 @@ export default function RootLayout() {
       if (nextAppState === "active" && user?.id) {
         console.log("📱 App ganhou foco - verificando alertas vencidos...");
         try {
-          await checkAndUpdateOverdueAlerts(user.id);
-          console.log("✅ Verificação de alertas concluída");
+          const result = await checkAndUpdateOverdueAlerts(user.id);
+          if (result.updatedCount > 0) {
+            console.log(
+              `✅ ${result.updatedCount} alertas marcados como vencidos`
+            );
+          }
         } catch (error) {
           console.error("❌ Erro na verificação:", error);
         }
@@ -65,6 +69,7 @@ export default function RootLayout() {
   }, [user?.id]);
 
   useEffect(() => {
+    // migrateDatabase();
     initDatabase();
   }, []);
 

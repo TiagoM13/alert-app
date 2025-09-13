@@ -5,7 +5,17 @@ import { Alert, AlertPriority, AlertType } from "@/components/alerts/types";
 import { BackButton } from "@/components/back-button";
 import { Theme } from "@/constants";
 import { useAuth } from "@/context/auth";
-import { fetchAlertById, insertAlert, updateAlert } from "@/database/database";
+import {
+  fetchAlertById,
+  insertAlert,
+  updateAlert,
+  updateAlertNotificationIds,
+} from "@/database/database";
+import {
+  cancelScheduledNotification,
+  scheduleOverdueNotification,
+  scheduleReminderNotification,
+} from "@/services/scheduledNotifications";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,21 +41,30 @@ import Toast from "react-native-toast-message";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-const alertSchema = z.object({
-  alertType: z.string().min(1, "Selecione um tipo de alerta"),
-  title: z
-    .string()
-    .min(1, "Título é obrigatório")
-    .max(100, "Título muito longo"),
-  description: z
-    .string()
-    .min(10, "Descrição deve ter pelo menos 10 caracteres")
-    .max(500, "Descrição muito longa"),
-  location: z.string().optional(),
-  priority: z.enum(["Low", "Medium", "High"]),
-  scheduledDate: z.string().optional(),
-  scheduledTime: z.string().optional(),
-});
+const alertSchema = z
+  .object({
+    alertType: z.string().min(1, "Selecione um tipo de alerta"),
+    title: z
+      .string()
+      .min(1, "Título é obrigatório")
+      .max(100, "Título muito longo"),
+    description: z
+      .string()
+      .min(10, "Descrição deve ter pelo menos 10 caracteres")
+      .max(500, "Descrição muito longa"),
+    location: z.string().optional(),
+    priority: z.enum(["Low", "Medium", "High"]),
+    scheduledDate: z.string().optional(),
+    scheduledTime: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      return true; // Por enquanto, mantém simples
+    },
+    {
+      message: "Data e hora são obrigatórias quando agendamento está ativo",
+    }
+  );
 
 export type AlertFormData = z.infer<typeof alertSchema>;
 
@@ -61,6 +80,79 @@ const priorityOptions = [
   },
 ];
 
+// Função helper para agendar notificações
+const scheduleNotificationsForAlert = async (
+  alert: Alert
+): Promise<{
+  notificationId?: string;
+  reminderNotificationId?: string;
+}> => {
+  const notifications: {
+    notificationId?: string;
+    reminderNotificationId?: string;
+  } = {};
+
+  if (alert.scheduledAt && alert.status === "pending") {
+    try {
+      console.log("📅 Agendando notificações para alerta:", alert.title);
+
+      // Agenda notificação de vencimento
+      const notificationId = await scheduleOverdueNotification(
+        alert.id,
+        alert.title,
+        alert.scheduledAt
+      );
+
+      if (notificationId) {
+        notifications.notificationId = notificationId;
+        console.log("✅ Notificação de vencimento agendada:", notificationId);
+      }
+
+      // Agenda lembrete 15 minutos antes
+      const reminderNotificationId = await scheduleReminderNotification(
+        alert.id,
+        alert.title,
+        alert.scheduledAt,
+        15 // 15 minutos antes
+      );
+
+      if (reminderNotificationId) {
+        notifications.reminderNotificationId = reminderNotificationId;
+        console.log("✅ Lembrete agendado:", reminderNotificationId);
+      }
+    } catch (error) {
+      console.error("❌ Erro ao agendar notificações:", error);
+    }
+  }
+
+  return notifications;
+};
+
+// Função helper para cancelar notificações antigas
+const cancelOldNotifications = async (alertId: string) => {
+  try {
+    const existingAlert = await fetchAlertById(alertId);
+
+    if (existingAlert?.notificationId) {
+      await cancelScheduledNotification(existingAlert.notificationId);
+      console.log(
+        "🗑️ Notificação antiga cancelada:",
+        existingAlert.notificationId
+      );
+    }
+
+    if (existingAlert?.reminderNotificationId) {
+      await cancelScheduledNotification(existingAlert.reminderNotificationId);
+      console.log(
+        "🗑️ Lembrete antigo cancelado:",
+        existingAlert.reminderNotificationId
+      );
+    }
+  } catch (error) {
+    console.error("❌ Erro ao cancelar notificações antigas:", error);
+  }
+};
+
 export default function Regiter() {
   const { id } = useLocalSearchParams();
   const isEditing = !!id;
@@ -70,6 +162,7 @@ export default function Regiter() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
   const [isScheduled, setIsScheduled] = useState(false);
+  const [notificationsScheduled, setNotificationsScheduled] = useState(false);
 
   const {
     control,
@@ -118,6 +211,12 @@ export default function Regiter() {
 
     try {
       if (isEditing && typeof id === "string") {
+        // === MODO EDIÇÃO ===
+
+        // 1. Cancela notificações antigas primeiro
+        await cancelOldNotifications(id);
+
+        // 2. Cria o alerta atualizado
         const updatedAlert: Alert = {
           id: id,
           userId: user.id,
@@ -125,7 +224,7 @@ export default function Regiter() {
           message: data.description,
           type: data.alertType as AlertType,
           priority: data.priority as AlertPriority,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(), // Você pode manter a data original se quiser
           updatedAt: new Date().toISOString(),
           location: data.location || "",
           scheduledAt: isScheduled
@@ -133,19 +232,43 @@ export default function Regiter() {
             : undefined,
           status: "pending",
         };
+
+        // 3. Atualiza o alerta no banco
         await updateAlert(updatedAlert);
-        console.log("Alerta atualizado no banco de dados:", updatedAlert);
+        console.log("✅ Alerta atualizado no banco de dados:", updatedAlert);
+
+        // 4. Agenda novas notificações se necessário
+        const notifications = await scheduleNotificationsForAlert(updatedAlert);
+
+        // 5. Salva os IDs das notificações no banco
+        if (
+          notifications.notificationId ||
+          notifications.reminderNotificationId
+        ) {
+          await updateAlertNotificationIds(
+            updatedAlert.id,
+            notifications.notificationId,
+            notifications.reminderNotificationId
+          );
+          console.log("✅ IDs de notificação atualizados");
+        }
+
         router.push("/(tabs)");
         reset();
 
         Toast.show({
           type: "success",
           text1: "Alert updated successfully!",
-          text2: "Your alert has been updated successfully",
+          text2: notifications.notificationId
+            ? "Alert updated and notifications scheduled"
+            : "Alert updated successfully",
           visibilityTime: 3000,
           autoHide: true,
         });
       } else {
+        // === MODO CRIAÇÃO ===
+
+        // 1. Cria o novo alerta
         const newAlert: Alert = {
           id: uuidv4(),
           userId: user.id,
@@ -161,15 +284,36 @@ export default function Regiter() {
             : undefined,
           status: "pending",
         };
+
+        // 2. Salva o alerta no banco
         await insertAlert(newAlert);
-        console.log("Alerta salvo no banco de dados:", newAlert);
+        console.log("✅ Alerta salvo no banco de dados:", newAlert);
+
+        // 3. Agenda notificações se necessário
+        const notifications = await scheduleNotificationsForAlert(newAlert);
+
+        // 4. Salva os IDs das notificações no banco
+        if (
+          notifications.notificationId ||
+          notifications.reminderNotificationId
+        ) {
+          await updateAlertNotificationIds(
+            newAlert.id,
+            notifications.notificationId,
+            notifications.reminderNotificationId
+          );
+          console.log("✅ IDs de notificação salvos");
+        }
+
         reset();
         router.push("/(tabs)");
 
         Toast.show({
           type: "success",
           text1: "Alert created successfully!",
-          text2: "Your alert has been created successfully",
+          text2: notifications.notificationId
+            ? "Alert created and notifications scheduled"
+            : "Alert created successfully",
           visibilityTime: 3000,
           autoHide: true,
         });
@@ -184,6 +328,7 @@ export default function Regiter() {
       Toast.show({
         type: "error",
         text1: message,
+        text2: "Please try again",
         visibilityTime: 3000,
         autoHide: true,
       });
@@ -397,6 +542,27 @@ export default function Regiter() {
                 }}
               />
             </View>
+
+            {isScheduled && (
+              <View className="bg-blue-50 p-3 rounded-lg mt-2">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons
+                    name="notifications-outline"
+                    size={20}
+                    color="#3B82F6"
+                  />
+                  <Text className="text-blue-700 font-medium">
+                    Notificações Automáticas
+                  </Text>
+                </View>
+                <Text className="text-blue-600 text-sm mt-1">
+                  • Lembrete 15 minutos antes do vencimento
+                </Text>
+                <Text className="text-blue-600 text-sm">
+                  • Notificação quando o alerta vencer
+                </Text>
+              </View>
+            )}
 
             {/* 3. Inputs de Data e Hora Condicionais */}
             {isScheduled && (

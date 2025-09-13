@@ -14,4 +14,6 @@ export interface Alert {
   status: AlertStatus; // Adicione esta linha
   createdAt: string;
   updatedAt: string;
+  notificationId?: string;
+  reminderNotificationId?: string;
 }
