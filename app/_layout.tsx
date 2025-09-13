@@ -8,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "@/context/auth";
 import { checkAndUpdateOverdueAlerts } from "@/services/alertStatusChecker";
+import { requestNotificationPermissions } from "@/services/scheduledNotifications";
 import { SplashScreen, Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { AppState } from "react-native";
@@ -67,6 +68,26 @@ export default function RootLayout() {
       subscription?.remove();
     };
   }, [user?.id]);
+
+  // ✅ Solicita permissões no início do app (uma única vez)
+  useEffect(() => {
+    const requestInitialPermissions = async () => {
+      try {
+        const hasPermission = await requestNotificationPermissions();
+        if (hasPermission) {
+          console.log(
+            "✅ Permissões de notificação concedidas no início do app"
+          );
+        } else {
+          console.log("⚠️ Usuário negou permissões de notificação");
+        }
+      } catch (error) {
+        console.error("❌ Erro ao solicitar permissões iniciais:", error);
+      }
+    };
+
+    requestInitialPermissions();
+  }, []); // ✅ Array vazio = executa apenas uma vez
 
   useEffect(() => {
     // migrateDatabase();

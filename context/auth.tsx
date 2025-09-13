@@ -1,8 +1,5 @@
 import { findUserById } from "@/database/database";
-import {
-  cancelAllNotifications,
-  requestNotificationPermissions,
-} from "@/services/scheduledNotifications";
+import { cancelAllNotifications } from "@/services/scheduledNotifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -55,13 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setIsAuthenticated(true);
       setUser(userData);
-
-      const hasNotificationPermission = await requestNotificationPermissions();
-      if (hasNotificationPermission) {
-        console.log("✅ Permissões de notificação concedidas");
-      } else {
-        console.log("⚠️ Usuário negou permissões de notificação");
-      }
     } catch (error) {
       console.error("❌ Erro no login:", error);
     }
