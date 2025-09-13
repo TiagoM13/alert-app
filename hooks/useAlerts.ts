@@ -1,7 +1,8 @@
 import { Alert } from "@/components/alerts/types";
-import { fetchAlerts, updateAlertStatus } from "@/database/database";
-import { format, parseISO } from "date-fns";
+import { fetchAlerts } from "@/database/database";
+import { checkAndUpdateOverdueAlerts } from "@/services";
 import { useCallback, useState } from "react";
+import { useActiveSync } from "./useActiveSync";
 
 interface UseAlertsOptions {
   includeCompleted?: boolean;
@@ -35,42 +36,34 @@ export const useAlerts = (
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<number>(0);
+
+  // NOVO: Sync ativo quando app está em uso
+  useActiveSync({
+    userId,
+    intervalMinutes: 2, // Verifica a cada 2 minutos quando ativo
+    onSyncComplete: (result) => {
+      if (result.success && result.updatedCount > 0) {
+        console.log(
+          `🔄 ${result.updatedCount} alertas atualizados - recarregando lista`
+        );
+        setLastSyncTime(Date.now()); // Força re-render
+      }
+    },
+  });
 
   const fetchAndProcessAlerts = useCallback(async () => {
     if (!userId) return;
 
     try {
-      let data = await fetchAlerts(userId);
-
-      // Processa alertas vencidos apenas se não estiver em modo somente leitura
+      // Se deve atualizar alertas vencidos automaticamente
       if (autoUpdateOverdue && !readOnly) {
-        const overdueUpdates = data.filter((alert) => {
-          if (!alert.scheduledAt || alert.status !== "pending") return false;
-
-          const scheduledAtWithoutZ = alert.scheduledAt.replace("Z", "");
-          const scheduledAtLocal = parseISO(scheduledAtWithoutZ);
-          const scheduledAtLocalISO = format(
-            scheduledAtLocal,
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-          );
-
-          const nowLocal = new Date();
-          const nowLocalISO = format(nowLocal, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-          const isOverdue = nowLocalISO > scheduledAtLocalISO;
-
-          return isOverdue;
-        });
-
-        if (overdueUpdates.length > 0) {
-          await Promise.all(
-            overdueUpdates.map((alert) =>
-              updateAlertStatus(alert.id, "overdue")
-            )
-          );
-          data = await fetchAlerts(userId);
-        }
+        console.log("🔄 Verificando alertas vencidos via hook...");
+        await checkAndUpdateOverdueAlerts(userId);
       }
+
+      // Busca os alertas atualizados
+      let data = await fetchAlerts(userId);
 
       // Filtra alertas baseado nas opções
       let filteredData = data;
@@ -92,7 +85,14 @@ export const useAlerts = (
       console.error("Erro ao processar alertas:", error);
       throw error;
     }
-  }, [userId, includeCompleted, includeOverdue, autoUpdateOverdue, readOnly]);
+  }, [
+    userId,
+    includeCompleted,
+    includeOverdue,
+    autoUpdateOverdue,
+    readOnly,
+    lastSyncTime,
+  ]);
 
   // Função para loading inicial (com loading geral)
   const loadAlertsInitial = useCallback(async () => {

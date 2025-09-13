@@ -5,12 +5,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { Alert, Text, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackButton } from "@/components/back-button";
 import { useAlertStats } from "@/hooks/useAlertStats";
+import { useBackgroundSync } from "@/hooks/useBackgroundSync";
 import { version } from "../package.json";
 
 export default function Profile() {
@@ -21,6 +22,23 @@ export default function Profile() {
     isLoading: statsLoading,
     fetchStats,
   } = useAlertStats(user?.id);
+
+  // NOVO: Hook para background sync
+  const {
+    isLoading: syncLoading,
+    lastSyncResult,
+    syncStatus,
+    manualSync,
+    checkSyncStatus,
+  } = useBackgroundSync();
+
+  // Função para teste manual
+  const handleManualSync = async () => {
+    if (user?.id) {
+      await manualSync(user.id);
+      await fetchStats(); // Atualiza as estatísticas após sync
+    }
+  };
 
   const handleSignOut = async () => {
     Alert.alert("Sair", "Tem certeza que deseja sair?", [
@@ -43,8 +61,9 @@ export default function Profile() {
     useCallback(() => {
       refreshUser();
       fetchStats();
+      checkSyncStatus();
       return () => {};
-    }, [refreshUser, fetchStats])
+    }, [refreshUser, fetchStats, checkSyncStatus])
   );
 
   return (
@@ -122,6 +141,38 @@ export default function Profile() {
                 Active
               </Text>
             </View>
+          </View>
+
+          {/* Debug/Test Section - Remova em produção */}
+          <View className="px-10 mt-6">
+            <Text className="text-xl text-textDescription font-semibold mb-4">
+              SYNC DEBUG
+            </Text>
+
+            <TouchableOpacity
+              onPress={handleManualSync}
+              disabled={syncLoading}
+              className="bg-blue-500 p-3 rounded-lg mb-2"
+            >
+              <Text className="text-white text-center">
+                {syncLoading ? "Sincronizando..." : "Sincronização Manual"}
+              </Text>
+            </TouchableOpacity>
+
+            {lastSyncResult && (
+              <Text
+                className={`text-sm ${lastSyncResult.success ? "text-green-600" : "text-red-600"}`}
+              >
+                {lastSyncResult.message}
+              </Text>
+            )}
+
+            {syncStatus && (
+              <Text className="text-sm text-gray-600">
+                Background Sync: {syncStatus.isRegistered ? "Ativo" : "Inativo"}
+                ({syncStatus.statusText})
+              </Text>
+            )}
           </View>
 
           {/* Settings */}

@@ -1,4 +1,5 @@
 import { findUserById } from "@/database/database";
+import { registerBackgroundSync, unregisterBackgroundSync } from "@/services";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -48,6 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await AsyncStorage.setItem("userData", JSON.stringify(userData));
     setIsAuthenticated(true);
     setUser(userData);
+
+    // Após login bem-sucedido, salve o userId e registre background sync
+    if (user) {
+      await AsyncStorage.setItem("currentUserId", user.id);
+      await registerBackgroundSync();
+      console.log("✅ Background sync registrado após login");
+    }
   };
 
   const signOut = async () => {
@@ -55,6 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await AsyncStorage.removeItem("userData");
     setIsAuthenticated(false);
     setUser(null);
+
+    // Cancela background sync antes de fazer logout
+    await unregisterBackgroundSync();
+    await AsyncStorage.removeItem("currentUserId");
   };
 
   const handleSetUser = (userData: User) => {

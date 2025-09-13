@@ -20,6 +20,7 @@
     "@types/uuid": "^10.0.0",
     "date-fns": "^4.1.0",
     "expo": "~53.0.9",
+    "expo-background-fetch": "~13.1.6",
     "expo-blur": "~14.1.4",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
@@ -32,6 +33,7 @@
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.4",
     "expo-system-ui": "~5.0.7",
+    "expo-task-manager": "~13.1.6",
     "expo-web-browser": "~14.1.6",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
@@ -53,7 +55,8 @@
     "styled-components": "^6.1.18",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zod": "^4.0.5"
+    "zod": "^4.0.5",
+    "expo-notifications": "~0.31.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

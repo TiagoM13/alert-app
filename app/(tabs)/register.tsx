@@ -26,6 +26,7 @@ import {
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Switch from "react-native-switch-toggle";
+import Toast from "react-native-toast-message";
 
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -136,6 +137,14 @@ export default function Regiter() {
         console.log("Alerta atualizado no banco de dados:", updatedAlert);
         router.push("/(tabs)");
         reset();
+
+        Toast.show({
+          type: "success",
+          text1: "Alert updated successfully!",
+          text2: "Your alert has been updated successfully",
+          visibilityTime: 3000,
+          autoHide: true,
+        });
       } else {
         const newAlert: Alert = {
           id: uuidv4(),
@@ -156,9 +165,28 @@ export default function Regiter() {
         console.log("Alerta salvo no banco de dados:", newAlert);
         reset();
         router.push("/(tabs)");
+
+        Toast.show({
+          type: "success",
+          text1: "Alert created successfully!",
+          text2: "Your alert has been created successfully",
+          visibilityTime: 3000,
+          autoHide: true,
+        });
       }
     } catch (error) {
+      const message = isEditing
+        ? "Error updating alert"
+        : "Error creating alert";
+
       console.error("Erro ao salvar/atualizar alerta:", error);
+
+      Toast.show({
+        type: "error",
+        text1: message,
+        visibilityTime: 3000,
+        autoHide: true,
+      });
     }
   };
 
