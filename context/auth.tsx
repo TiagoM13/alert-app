@@ -1,4 +1,8 @@
 import { findUserById } from "@/database/database";
+import {
+  cancelAllNotifications,
+  requestNotificationPermissions,
+} from "@/services/scheduledNotifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -44,24 +48,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   const signIn = async (userId: string, userData: User) => {
-    await AsyncStorage.setItem("userSessionId", userId);
-    await AsyncStorage.setItem("userData", JSON.stringify(userData));
-    setIsAuthenticated(true);
-    setUser(userData);
+    try {
+      await AsyncStorage.setItem("userSessionId", userId);
+      await AsyncStorage.setItem("userData", JSON.stringify(userData));
+      await AsyncStorage.setItem("currentUserId", userData.id);
 
-    if (user) {
-      await AsyncStorage.setItem("currentUserId", user.id);
-      console.log("✅ Background sync registrado após login");
+      setIsAuthenticated(true);
+      setUser(userData);
+
+      const hasNotificationPermission = await requestNotificationPermissions();
+      if (hasNotificationPermission) {
+        console.log("✅ Permissões de notificação concedidas");
+      } else {
+        console.log("⚠️ Usuário negou permissões de notificação");
+      }
+    } catch (error) {
+      console.error("❌ Erro no login:", error);
     }
   };
 
   const signOut = async () => {
-    await AsyncStorage.removeItem("userSessionId");
-    await AsyncStorage.removeItem("userData");
-    setIsAuthenticated(false);
-    setUser(null);
+    try {
+      await cancelAllNotifications();
+      console.log("🗑️ Notificações canceladas no logout");
 
-    await AsyncStorage.removeItem("currentUserId");
+      await AsyncStorage.removeItem("userSessionId");
+      await AsyncStorage.removeItem("userData");
+      await AsyncStorage.removeItem("currentUserId");
+
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error("❌ Erro no logout:", error);
+    }
   };
 
   const handleSetUser = (userData: User) => {

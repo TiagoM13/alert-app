@@ -20,7 +20,7 @@ interface UseAlertsReturn {
   handleAlertDeleted: (deletedId: string) => void;
   handleAlertCompleted: (completedId: string) => void;
   setAlerts: React.Dispatch<React.SetStateAction<Alert[]>>;
-  isReadOnly: boolean; // Indica se está em modo somente leitura
+  isReadOnly: boolean;
 }
 
 export const useAlerts = (
@@ -37,9 +37,7 @@ export const useAlerts = (
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ NOVO: Listener para notificações em tempo real
   useNotificationListener(() => {
-    // Quando uma notificação atualiza um status, recarrega a lista
     if (!readOnly) {
       console.log("🔄 Recarregando alertas após notificação...");
       fetchAndProcessAlerts();
@@ -50,16 +48,12 @@ export const useAlerts = (
     if (!userId) return;
 
     try {
-      // ✅ Se deve verificar alertas vencidos E não está em modo somente leitura
       if (autoUpdateOverdue && !readOnly) {
         console.log("🔄 Verificando alertas vencidos...");
         await checkAndUpdateOverdueAlerts(userId);
       }
 
-      // Busca os alertas (agora já atualizados)
       let data = await fetchAlerts(userId);
-
-      // Filtra alertas baseado nas opções
       let filteredData = data;
 
       if (!includeCompleted) {
@@ -81,7 +75,6 @@ export const useAlerts = (
     }
   }, [userId, includeCompleted, includeOverdue, autoUpdateOverdue, readOnly]);
 
-  // Função para loading inicial (com loading geral)
   const loadAlertsInitial = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -93,7 +86,6 @@ export const useAlerts = (
     }
   }, [fetchAndProcessAlerts]);
 
-  // Função para refresh (sem loading geral)
   const handleRefresh = useCallback(async () => {
     try {
       await fetchAndProcessAlerts();
