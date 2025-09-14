@@ -70,6 +70,8 @@
   },
   "private": true,
   "resoluções": {
-    "componentes estilizados": "^5"
+    "componentes estilizados": "^5",
+    "react-native-worklets": false,
+    "react-native-worklets-core": false
   }
 }

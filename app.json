@@ -7,16 +7,24 @@
     "icon": "./assets/images/app-icon.png",
     "scheme": "alertapp",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tiagom13.alertapp",
       "infoPlist": {
-        "UIBackgroundModes": ["background-processing", "background-fetch"],
+        "UIBackgroundModes": [
+          "background-processing",
+          "background-fetch",
+          "background-processing",
+          "background-fetch"
+        ],
         "NSLocationWhenInUseUsageDescription": "Este app precisa de acesso à localização para alertas baseados em localização.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Este app precisa de acesso à localização para alertas baseados em localização.",
-        "NSUserNotificationsUsageDescription": "Este app envia notificações importantes sobre seus alertas."
+        "NSUserNotificationsUsageDescription": "Este app envia notificações importantes sobre seus alertas.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
