@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "alert-app",
+    "name": "Alert App",
     "slug": "alert-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.png",
     "scheme": "alertapp",
     "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
     "newArchEnabled": true,
     "notifications": {
       "icon": "./assets/images/app-icon.png",
@@ -57,6 +58,13 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "tiagom13",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "17083c5e-4c86-420d-b88e-61d9c26b2f55"
+      }
     }
   }
 }
