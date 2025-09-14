@@ -2,12 +2,13 @@ import { Header } from "@/components";
 import { AlertList } from "@/components/alerts/alert-list";
 import { router } from "expo-router";
 import React, { useCallback, useMemo } from "react";
-import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { useAuth } from "@/context/auth";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useFocusEffect } from "@react-navigation/native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

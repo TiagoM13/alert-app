@@ -7,7 +7,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useForm } from "react-hook-form";
-import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import z from "zod";
 

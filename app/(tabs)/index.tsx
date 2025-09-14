@@ -5,7 +5,8 @@ import { useAlerts } from "@/hooks/useAlerts";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useCallback } from "react";
-import { SafeAreaView, View } from "react-native";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
   const { user } = useAuth();
