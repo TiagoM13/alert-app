@@ -9,14 +9,15 @@
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": ["**/*"],
     "newArchEnabled": true,
-    "notifications": {
-      "icon": "./assets/images/app-icon.png",
-      "color": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.alertapp",
-      "backgroundModes": ["background-fetch"]
+      "bundleIdentifier": "com.tiagom13.alertapp",
+      "infoPlist": {
+        "UIBackgroundModes": ["background-processing", "background-fetch"],
+        "NSLocationWhenInUseUsageDescription": "Este app precisa de acesso à localização para alertas baseados em localização.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Este app precisa de acesso à localização para alertas baseados em localização.",
+        "NSUserNotificationsUsageDescription": "Este app envia notificações importantes sobre seus alertas."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,10 +25,13 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.alertapp",
+      "package": "com.tiagom13.alertapp",
       "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ]
     },
     "web": {
@@ -54,7 +58,8 @@
           "color": "#ffffff",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
